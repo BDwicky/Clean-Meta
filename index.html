@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Cleaner - Cloaking & Metadata Log</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #090d16;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px 16px;
+            box-sizing: border-box;
+        }
+        .card {
+            background: #111827;
+            padding: 28px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            max-width: 640px;
+            width: 100%;
+            border: 1px solid #1f2937;
+        }
+        h2 { margin-top: 0; font-size: 22px; color: #38bdf8; text-align: center; }
+        p.subtitle { color: #9ca3af; font-size: 13.5px; line-height: 1.5; text-align: center; margin-bottom: 20px; }
+
+        .mode-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .mode-tab {
+            flex: 1;
+            padding: 11px;
+            border-radius: 9px;
+            border: 1px solid #1f2937;
+            background: #0b1329;
+            color: #9ca3af;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.15s;
+            user-select: none;
+        }
+        .mode-tab.active {
+            background: #0284c7;
+            border-color: #0284c7;
+            color: white;
+        }
+
+        .dropzone {
+            border: 2px dashed #0284c7;
+            border-radius: 12px;
+            padding: 30px 20px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            background: #0b1329;
+            text-align: center;
+            transition: 0.2s;
+        }
+        .dropzone:hover { background: #0f1c3d; border-color: #38bdf8; }
+        .dropzone.dragover { background: #0f1c3d; border-color: #38bdf8; }
+        input[type="file"] { display: none; }
+        .btn {
+            background: #0284c7;
+            color: white;
+            border: none;
+            padding: 13px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .btn:hover { background: #0369a1; }
+        .btn:disabled { background: #374151; cursor: not-allowed; }
+        .status { margin-top: 15px; font-size: 14px; text-align: center; font-weight: 500; }
+        .progress-wrap {
+            display: none;
+            margin-top: 12px;
+            background: #030712;
+            border-radius: 8px;
+            height: 22px;
+            overflow: hidden;
+            border: 1px solid #1f2937;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #0284c7, #38bdf8);
+            width: 0%;
+            transition: width 0.4s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: white;
+        }
+        .download-btn {
+            display: none;
+            margin-top: 16px;
+            background: #10b981;
+            text-decoration: none;
+            padding: 13px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        .download-btn:hover { background: #059669; }
+        .vmeta {
+            display: none;
+            margin-top: 12px;
+            font-size: 12.5px;
+            color: #9ca3af;
+            text-align: center;
+        }
+
+        .log-container {
+            display: none;
+            margin-top: 24px;
+            background: #030712;
+            border: 1px solid #1f2937;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: left;
+            font-size: 13px;
+        }
+        .log-section-title {
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 14px 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .log-section-title:first-child { margin-top: 0; }
+        .text-red { color: #f87171; }
+        .text-yellow { color: #fbbf24; }
+        .text-green { color: #34d399; }
+        .log-list {
+            margin: 0;
+            padding-left: 18px;
+            color: #d1d5db;
+            line-height: 1.6;
+        }
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6px;
+        }
+        .log-table td {
+            padding: 4px 8px;
+            border-bottom: 1px solid #1f2937;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-table td.key { color: #9ca3af; width: 35%; }
+        .log-table td.val { color: #38bdf8; }
+
+        /* Preview Containers */
+        .preview-box {
+            display: none;
+            margin-bottom: 20px;
+            background: #030712;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+        }
+        .preview-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #9ca3af;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .preview-media {
+            max-width: 100%;
+            max-height: 280px;
+            border-radius: 8px;
+            object-fit: contain;
+            background: #000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        @media (max-width: 540px) {
+            .preview-grid { grid-template-columns: 1fr; }
+        }
+        .preview-col {
+            background: #070d1e;
+            border: 1px solid #1f2937;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+        .preview-col-title {
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        /* Modal PIN */
+        .pin-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(4, 7, 14, 0.88);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+        }
+        .pin-modal-card {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 16px;
+            padding: 28px 24px;
+            width: 100%;
+            max-width: 340px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .pin-input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #374151;
+            background: #0b1329;
+            color: #f8fafc;
+            font-size: 20px;
+            letter-spacing: 6px;
+            text-align: center;
+            margin: 16px 0 12px 0;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .pin-input:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.25);
+        }
+        .pin-error {
+            color: #f87171;
+            font-size: 13px;
+            margin-top: 8px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- PIN Gate Popup -->
+    <div id="pinModal" class="pin-modal-overlay">
+        <div class="pin-modal-card">
+            <h3 style="margin: 0 0 8px 0; color: #38bdf8; font-size: 18px;">Autentikasi Akses</h3>
+            <p style="margin: 0; color: #9ca3af; font-size: 13px;">Masukkan PIN keamanan untuk masuk</p>
+            <form id="pinForm" onsubmit="handlePinSubmit(event)">
+                <input type="password" id="pinInput" class="pin-input" maxlength="10" placeholder="••••••" autofocus autocomplete="off">
+                <button type="submit" class="btn" style="padding: 10px 16px; font-size: 14px;">Buka Akses</button>
+                <div id="pinError" class="pin-error">PIN salah, coba lagi!</div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card" id="appCard" style="display: none;">
+        <h2>AI Metadata Stripper & Camera Injector</h2>
+        <p class="subtitle">Bersihkan metadata AI (C2PA, XMP, prompt, model) & suntik metadata kamera asli. 100% tanpa efek, tanpa filter, tanpa kompresi piksel/re-encode.</p>
+
+        <div class="mode-tabs">
+            <div class="mode-tab active" id="tabImage" onclick="setMode('image')">Foto</div>
+            <div class="mode-tab" id="tabVideo" onclick="setMode('video')">Video</div>
+            <div class="mode-tab" id="tabYouTube" onclick="showSection('youtube')">YouTube</div>
+            <div class="mode-tab" id="tabAudioExtract" onclick="showSection('audio')">🎵 MP3</div>
+        </div>
+
+        <!-- ================= SECTION: CLEANER (FOTO & VIDEO) ================= -->
+        <div id="sectionCleaner">
+        <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+            <div id="dropText">Pilih / Seret Foto atau Video ke Sini (Auto-Detect)</div>
+            <input type="file" id="fileInput" accept="image/*,video/*,.mp4,.mov,.webm,.mkv,.avi">
+        </div>
+
+        <!-- Preview Sebelum Proses -->
+        <div id="beforePreviewBox" class="preview-box">
+            <div class="preview-title">👁 Preview File Asli (Sebelum Proses)</div>
+            <img id="beforeImgPreview" class="preview-media" style="display: none;" alt="Preview Foto Asli">
+            <video id="beforeVidPreview" class="preview-media" style="display: none;" controls playsinline></video>
+        </div>
+
+        <button class="btn" id="uploadBtn" onclick="processFile()">Proses & Bersihkan</button>
+        <div class="status" id="status"></div>
+        <div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar">0%</div></div>
+        <div class="vmeta" id="vmeta"></div>
+
+        <!-- Preview Hasil Sesudah Proses -->
+        <div id="afterPreviewBox" class="preview-box" style="margin-top: 18px; border-color: #059669;">
+            <div class="preview-title" style="color: #34d399;">✓ Preview Hasil Bersih (Bebas Metadata AI)</div>
+            <img id="afterImgPreview" class="preview-media" style="display: none;" alt="Preview Hasil Bersih">
+            <video id="afterVidPreview" class="preview-media" style="display: none;" controls playsinline></video>
+        </div>
+
+        <a id="downloadLink" class="download-btn" download>Unduh Hasil Bersih</a>
+
+        <div id="logContainer" class="log-container">
+            <div class="log-section-title text-red">
+                <span>[1] Data / Metadata Asli yang Dihapus</span>
+            </div>
+            <ul class="log-list" id="removedList"></ul>
+
+            <div class="log-section-title text-yellow">
+                <span>[2] Integritas Kualitas File</span>
+            </div>
+            <ul class="log-list" id="modList"></ul>
+
+            <div class="log-section-title text-green">
+                <span id="exifTitle">[3] Metadata Kamera Asli yang Disuntikkan (EXIF)</span>
+            </div>
+            <table class="log-table" id="exifTable"></table>
+        </div>
+        </div>
+
+        <!-- ================= SECTION: YOUTUBE DOWNLOADER ================= -->
+        <div id="sectionYouTube" style="display: none;">
+            <p class="subtitle" style="margin-bottom: 14px;">Unduh video YouTube (720p/1080p/1440p/4K) atau audio saja (kualitas terbaik). Metadata YouTube otomatis dibersihkan.</p>
+
+            <input type="text" id="ytUrl" class="pin-input" style="letter-spacing: normal; font-size: 15px; text-align: left; padding: 12px 14px; margin: 0 0 12px 0;" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+
+            <div class="mode-tabs" style="margin-bottom: 12px;">
+                <div class="mode-tab active" id="ytModeVideo" onclick="setYtMode('video')">🎬 Video + Audio</div>
+                <div class="mode-tab" id="ytModeAudio" onclick="setYtMode('audio')">🎵 Audio Saja</div>
+            </div>
+
+            <div id="ytQualityRow" style="margin-bottom: 14px;">
+                <p style="margin: 0 0 6px 0; font-size: 12.5px; color: #9ca3af; text-align: center;">Kualitas Video (minimal)</p>
+                <div class="mode-tabs">
+                    <div class="mode-tab active" data-ytq="720" onclick="setYtQuality(720)">720p</div>
+                    <div class="mode-tab" data-ytq="1080" onclick="setYtQuality(1080)">1080p</div>
+                    <div class="mode-tab" data-ytq="1440" onclick="setYtQuality(1440)">1440p</div>
+                    <div class="mode-tab" data-ytq="2160" onclick="setYtQuality(2160)">4K</div>
+                </div>
+            </div>
+
+            <button class="btn" id="ytBtn" onclick="startYoutubeDownload()">Download dari YouTube</button>
+            <div class="status" id="ytStatus"></div>
+            <div class="progress-wrap" id="ytProgressWrap"><div class="progress-bar" id="ytProgressBar">0%</div></div>
+            <div class="vmeta" id="ytMeta"></div>
+
+            <!-- Preview hasil YouTube -->
+            <div id="ytAfterBox" class="preview-box" style="margin-top: 18px; border-color: #059669;">
+                <div class="preview-title" style="color: #34d399;">✓ Hasil Unduhan YouTube</div>
+                <video id="ytVidPreview" class="preview-media" style="display: none;" controls playsinline></video>
+                <audio id="ytAudioPreview" style="display: none; width: 100%;" controls></audio>
+            </div>
+
+            <a id="ytDownloadLink" class="download-btn" download>Unduh File</a>
+        </div>
+
+        <!-- ================= SECTION: EXTRACT AUDIO (VIDEO -> MP3) ================= -->
+        <div id="sectionAudioExtract" style="display: none;">
+            <p class="subtitle" style="margin-bottom: 14px;">Unggah file video, lalu ekstrak track audionya saja menjadi MP3 kualitas jernih. Video asli dibuang, hanya suaranya yang disimpan.</p>
+
+            <div class="dropzone" id="audioDropzone" onclick="document.getElementById('audioFileInput').click()">
+                <div id="audioDropText">Pilih / Seret Video ke Sini (MP4, MOV, WEBM, MKV)</div>
+                <input type="file" id="audioFileInput" accept="video/*,.mp4,.mov,.webm,.mkv,.avi">
+            </div>
+
+            <div id="audioBeforeBox" class="preview-box">
+                <div class="preview-title">👁 Preview Video Sumber</div>
+                <video id="audioBeforeVid" class="preview-media" style="display: none;" controls playsinline></video>
+            </div>
+
+            <p style="margin: 0 0 6px 0; font-size: 12.5px; color: #9ca3af; text-align: center;">Kualitas MP3</p>
+            <div class="mode-tabs" style="margin-bottom: 14px;">
+                <div class="mode-tab active" data-abitrate="high" onclick="setAudioBitrate('high')">Tinggi (~245kbps)</div>
+                <div class="mode-tab" data-abitrate="medium" onclick="setAudioBitrate('medium')">Medium (~190kbps)</div>
+                <div class="mode-tab" data-abitrate="standard" onclick="setAudioBitrate('standard')">Standar (192kbps)</div>
+            </div>
+
+            <button class="btn" id="audioBtn" onclick="startAudioExtract()" disabled>Extract Audio ke MP3</button>
+            <div class="status" id="audioStatus"></div>
+            <div class="progress-wrap" id="audioProgressWrap"><div class="progress-bar" id="audioProgressBar">0%</div></div>
+            <div class="vmeta" id="audioMeta"></div>
+
+            <!-- Preview hasil MP3 -->
+            <div id="audioAfterBox" class="preview-box" style="margin-top: 18px; border-color: #059669;">
+                <div class="preview-title" style="color: #34d399;">✓ Hasil MP3</div>
+                <audio id="audioAfterPlayer" style="display: none; width: 100%;" controls></audio>
+            </div>
+
+            <a id="audioDownloadLink" class="download-btn" download>Unduh MP3</a>
+        </div>
+    </div>
+
+    <script>
+        // PIN Gate - Server Verified
+        const pinModal = document.getElementById('pinModal');
+        const pinInput = document.getElementById('pinInput');
+        const pinError = document.getElementById('pinError');
+        const appCard = document.getElementById('appCard');
+
+        async function verifyPinOnServer(pin) {
+            try {
+                const res = await fetch('/api/verify-pin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin: pin })
+                });
+                const data = await res.json();
+                return data.success;
+            } catch (err) {
+                return false;
+            }
+        }
+
+        async function handlePinSubmit(e) {
+            e.preventDefault();
+            const entered = pinInput.value.trim();
+            const ok = await verifyPinOnServer(entered);
+            if (ok) {
+                pinModal.style.display = 'none';
+                appCard.style.display = 'block';
+                pinError.style.display = 'none';
+            } else {
+                pinError.style.display = 'block';
+                pinInput.value = '';
+                pinInput.focus();
+            }
+        }
+
+        // Cek apakah cookie sesi sudah valid dengan request test ke endpoint
+        async function initAuthCheck() {
+            try {
+                const res = await fetch('/api/clean', { method: 'POST' });
+                // Jika 401 Unauthorized, berarti belum login
+                if (res.status === 401) {
+                    pinModal.style.display = 'flex';
+                    appCard.style.display = 'none';
+                    setTimeout(() => { if (pinInput) pinInput.focus(); }, 100);
+                } else {
+                    // Berarti sudah terautentikasi (cookie valid)
+                    pinModal.style.display = 'none';
+                    appCard.style.display = 'block';
+                }
+            } catch (e) {
+                pinModal.style.display = 'flex';
+                appCard.style.display = 'none';
+            }
+        }
+        initAuthCheck();
+
+        let mode = 'image';   // 'image' | 'video'
+        let file = null;
+        let pollTimer = null;
+
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const dropText = document.getElementById('dropText');
+        const statusEl = document.getElementById('status');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const dl = document.getElementById('downloadLink');
+        const logBox = document.getElementById('logContainer');
+        const progressWrap = document.getElementById('progressWrap');
+        const progressBar = document.getElementById('progressBar');
+        const vmetaEl = document.getElementById('vmeta');
+        const beforeBox = document.getElementById('beforePreviewBox');
+        const beforeImg = document.getElementById('beforeImgPreview');
+        const beforeVid = document.getElementById('beforeVidPreview');
+        const afterBox = document.getElementById('afterPreviewBox');
+        const afterImg = document.getElementById('afterImgPreview');
+        const afterVid = document.getElementById('afterVidPreview');
+
+        let previewObjectUrl = null;
+        let afterObjectUrl = null;
+
+        function showBeforePreview(selectedFile) {
+            if (previewObjectUrl) {
+                URL.revokeObjectURL(previewObjectUrl);
+                previewObjectUrl = null;
+            }
+            if (!selectedFile) {
+                beforeBox.style.display = 'none';
+                beforeImg.style.display = 'none';
+                beforeImg.removeAttribute('src');
+                beforeVid.style.display = 'none';
+                beforeVid.pause();
+                beforeVid.removeAttribute('src');
+                beforeVid.load();
+                return;
+            }
+
+            previewObjectUrl = URL.createObjectURL(selectedFile);
+            if (selectedFile.type.startsWith('image/') || mode === 'image') {
+                beforeImg.src = previewObjectUrl;
+                beforeImg.style.display = 'inline-block';
+                beforeVid.pause();
+                beforeVid.style.display = 'none';
+            } else {
+                beforeVid.src = previewObjectUrl;
+                beforeVid.style.display = 'inline-block';
+                beforeImg.style.display = 'none';
+            }
+            beforeBox.style.display = 'block';
+        }
+
+        function showAfterPreview(url, isVideo) {
+            if (isVideo) {
+                afterVid.src = url;
+                afterVid.style.display = 'inline-block';
+                afterImg.style.display = 'none';
+            } else {
+                afterImg.src = url;
+                afterImg.style.display = 'inline-block';
+                afterVid.style.display = 'none';
+                afterVid.pause();
+            }
+            afterBox.style.display = 'block';
+        }
+
+        function applyModeUI(m) {
+            mode = m;
+            document.getElementById('tabImage').classList.toggle('active', m === 'image');
+            document.getElementById('tabVideo').classList.toggle('active', m === 'video');
+            fileInput.accept = (m === 'image') ? 'image/*' : 'video/*,.mp4,.mov,.webm,.mkv,.avi';
+        }
+
+        function detectFileType(f) {
+            const t = (f.type || '').toLowerCase();
+            if (t.startsWith('image/')) return 'image';
+            if (t.startsWith('video/')) return 'video';
+            const ext = (f.name || '').split('.').pop().toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) return 'image';
+            if (['mp4', 'mov', 'webm', 'mkv'].includes(ext)) return 'video';
+            return null;
+        }
+
+        function handleFileSelected(f) {
+            const detected = detectFileType(f);
+            if (!detected) {
+                statusEl.style.color = '#f87171';
+                statusEl.innerText = 'Format file tidak dikenali. Gunakan foto (JPG, PNG, WEBP) atau video (MP4, MOV, WEBM, MKV).';
+                file = null;
+                showBeforePreview(null);
+                return;
+            }
+            applyModeUI(detected);
+            file = f;
+            const typeLabel = detected === 'image' ? 'Foto' : 'Video';
+            dropText.innerText = '✓ ' + typeLabel + ' terdeteksi: ' + f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' MB)';
+            showBeforePreview(f);
+            if (afterBox) afterBox.style.display = 'none';
+            statusEl.innerHTML = '';
+        }
+
+        function setMode(m) {
+            applyModeUI(m);
+            showSection('cleaner');
+            // Jika file yang sedang dipilih cocok dengan tab yang diklik,
+            // pertahankan file & preview-nya (tidak di-reset)
+            if (file) {
+                const detected = detectFileType(file);
+                if (detected === m) {
+                    return;
+                }
+            }
+            fileInput.value = '';
+            file = null;
+            showBeforePreview(null);
+            if (afterBox) afterBox.style.display = 'none';
+            dropText.innerText = 'Pilih / Seret Foto atau Video ke Sini (Auto-Detect)';
+            statusEl.innerHTML = '';
+            progressWrap.style.display = 'none';
+            vmetaEl.style.display = 'none';
+            dl.style.display = 'none';
+            logBox.style.display = 'none';
+        }
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
+            window.addEventListener(ev, (e) => {
+                if (ev === 'dragover' || ev === 'drop') {
+                    e.preventDefault();
+                }
+            }, false);
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files && fileInput.files.length > 0) {
+                handleFileSelected(fileInput.files[0]);
+            }
+        });
+
+        ['dragenter', 'dragover'].forEach(ev => {
+            dropzone.addEventListener(ev, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.add('dragover');
+            });
+        });
+
+        ['dragleave', 'dragend'].forEach(ev => {
+            dropzone.addEventListener(ev, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove('dragover');
+            });
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('dragover');
+            const dt = e.dataTransfer;
+            if (dt && dt.files && dt.files.length > 0) {
+                try {
+                    fileInput.files = dt.files;
+                } catch (err) {
+                    /* browser bisa menolak assign; file variable sudah di-set manual */
+                }
+                handleFileSelected(dt.files[0]);
+            }
+        });
+
+        function resetUI() {
+            statusEl.innerHTML = '';
+            progressWrap.style.display = 'none';
+            progressBar.style.width = '0%';
+            vmetaEl.style.display = 'none';
+            dl.style.display = 'none';
+            logBox.style.display = 'none';
+            if (afterBox) afterBox.style.display = 'none';
+        }
+
+        function renderReport(report, exifTitle) {
+            document.getElementById('exifTitle').innerText = exifTitle;
+            const removedUl = document.getElementById('removedList');
+            removedUl.innerHTML = '';
+            (report.removed_items || []).forEach(item => {
+                const li = document.createElement('li');
+                li.innerText = item;
+                removedUl.appendChild(li);
+            });
+
+            const modUl = document.getElementById('modList');
+            modUl.innerHTML = '';
+            (report.modifications || []).forEach(m => {
+                const li = document.createElement('li');
+                li.innerHTML = '<strong>' + m.stage + ':</strong> ' + m.action;
+                modUl.appendChild(li);
+            });
+
+            const exifTbl = document.getElementById('exifTable');
+            exifTbl.innerHTML = '';
+            (report.injected_exif || []).forEach(pair => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td class="key">' + pair[0] + '</td><td class="val">' + pair[1] + '</td>';
+                exifTbl.appendChild(tr);
+            });
+
+            logBox.style.display = 'block';
+        }
+
+        async function processImage() {
+            statusEl.style.color = '#38bdf8';
+            statusEl.innerHTML = 'Sedang membersihkan metadata & menyuntikkan EXIF kamera...';
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const res = await fetch('/api/clean', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.success) {
+                statusEl.style.color = '#34d399';
+                statusEl.innerText = '✓ Selesai! Metadata bersih & EXIF disuntik (kualitas 100% utuh).';
+                dl.href = data.download_url;
+                dl.innerText = 'Unduh Hasil (' + data.filename + ')';
+                dl.style.display = 'block';
+                showAfterPreview(data.download_url, false);
+                renderReport(data.report, '[3] Metadata Kamera Asli yang Disuntikkan (EXIF)');
+            } else {
+                statusEl.style.color = '#f87171';
+                statusEl.innerText = 'Gagal: ' + (data.error || 'Terjadi kesalahan');
+            }
+        }
+
+        async function processVideo() {
+            statusEl.style.color = '#38bdf8';
+            statusEl.innerHTML = 'Mengunggah & menganalisis video...';
+
+            const formData = new FormData();
+            formData.append('video', file);
+
+            const res = await fetch('/api/clean-video', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (!data.success) {
+                statusEl.style.color = '#f87171';
+                statusEl.innerText = 'Gagal: ' + (data.error || 'Terjadi kesalahan');
+                return;
+            }
+
+            progressWrap.style.display = 'block';
+            statusEl.innerHTML = 'Membersihkan metadata video (lossless stream copy)...';
+
+            const fmtMeta = (m) => (m ? ('Durasi: ' + (m.duration || 0).toFixed(1) + 's — ' +
+                m.resolution + ' @ ' + m.fps + 'fps — Audio: ' +
+                (m.has_audio ? 'ya (disalin tanpa re-encode)' : 'tidak')) : '');
+
+            pollTimer = setInterval(async () => {
+                try {
+                    const sres = await fetch('/api/video-status/' + data.job_id);
+                    const sdata = await sres.json();
+                    progressBar.style.width = (sdata.progress || 0) + '%';
+                    progressBar.innerText = (sdata.progress || 0) + '%';
+                    if (sdata.meta) {
+                        vmetaEl.style.display = 'block';
+                        vmetaEl.innerText = fmtMeta(sdata.meta);
+                    }
+
+                    if (sdata.status === 'done') {
+                        clearInterval(pollTimer);
+                        progressWrap.style.display = 'none';
+                        statusEl.style.color = '#34d399';
+                        statusEl.innerText = '✓ Video berhasil diproses!';
+                        dl.href = sdata.download_url;
+                        dl.innerText = 'Unduh Video Bersih (' + sdata.filename + ')';
+                        dl.style.display = 'block';
+                        showAfterPreview(sdata.download_url, true);
+                        renderReport(sdata.report, '[3] Metadata Kamera Asli yang Disuntikkan (QuickTime/EXIF)');
+                    } else if (sdata.status === 'error') {
+                        clearInterval(pollTimer);
+                        progressWrap.style.display = 'none';
+                        statusEl.style.color = '#f87171';
+                        statusEl.innerText = 'Gagal: ' + (sdata.error || 'kesalahan pemrosesan');
+                    }
+                } catch (err) { /* keep polling */ }
+            }, 1500);
+        }
+
+        async function processFile() {
+            if (!file) {
+                alert(mode === 'image' ? 'Silakan pilih foto terlebih dahulu!' : 'Silakan pilih video terlebih dahulu!');
+                return;
+            }
+            if (mode === 'video' && file.size > 200 * 1024 * 1024) {
+                alert('Ukuran video maksimal 200MB.');
+                return;
+            }
+            uploadBtn.disabled = true;
+            resetUI();
+            try {
+                if (mode === 'image') await processImage();
+                else await processVideo();
+            } catch (err) {
+                statusEl.style.color = '#f87171';
+                statusEl.innerText = 'Error menghubungi server.';
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        }
+
+        // ================= YOUTUBE DOWNLOADER =================
+        let ytMode = 'video';
+        let ytQuality = 720;
+        let ytPollTimer = null;
+
+        const ytUrlInput = document.getElementById('ytUrl');
+        const ytBtn = document.getElementById('ytBtn');
+        const ytStatus = document.getElementById('ytStatus');
+        const ytProgressWrap = document.getElementById('ytProgressWrap');
+        const ytProgressBar = document.getElementById('ytProgressBar');
+        const ytMeta = document.getElementById('ytMeta');
+        const ytAfterBox = document.getElementById('ytAfterBox');
+        const ytVidPreview = document.getElementById('ytVidPreview');
+        const ytAudioPreview = document.getElementById('ytAudioPreview');
+        const ytDl = document.getElementById('ytDownloadLink');
+
+        function showSection(section) {
+            // Pause semua media preview di section lain saat berpindah tab
+            if (section !== 'cleaner') {
+                try { beforeVid.pause(); afterVid.pause(); } catch (e) {}
+            }
+            if (section !== 'youtube') {
+                try { ytVidPreview.pause(); ytAudioPreview.pause(); } catch (e) {}
+            }
+            if (section !== 'audio') {
+                try { audioBeforeVid.pause(); audioAfterPlayer.pause(); } catch (e) {}
+            }
+            document.getElementById('sectionCleaner').style.display = (section === 'youtube' || section === 'audio') ? 'none' : 'block';
+            document.getElementById('sectionYouTube').style.display = (section === 'youtube') ? 'block' : 'none';
+            document.getElementById('sectionAudioExtract').style.display = (section === 'audio') ? 'block' : 'none';
+            document.getElementById('tabImage').classList.toggle('active', section === 'cleaner' && mode === 'image');
+            document.getElementById('tabVideo').classList.toggle('active', section === 'cleaner' && mode === 'video');
+            document.getElementById('tabYouTube').classList.toggle('active', section === 'youtube');
+            document.getElementById('tabAudioExtract').classList.toggle('active', section === 'audio');
+        }
+
+        function setYtMode(m) {
+            ytMode = m;
+            document.getElementById('ytModeVideo').classList.toggle('active', m === 'video');
+            document.getElementById('ytModeAudio').classList.toggle('active', m === 'audio');
+            document.getElementById('ytQualityRow').style.display = (m === 'video') ? 'block' : 'none';
+        }
+
+        function setYtQuality(q) {
+            ytQuality = q;
+            document.querySelectorAll('[data-ytq]').forEach(el => {
+                el.classList.toggle('active', parseInt(el.getAttribute('data-ytq')) === q);
+            });
+        }
+
+        async function startYoutubeDownload() {
+            const url = ytUrlInput.value.trim();
+            if (!url) {
+                alert('Masukkan URL YouTube terlebih dahulu!');
+                return;
+            }
+            ytBtn.disabled = true;
+            ytStatus.style.color = '#38bdf8';
+            ytStatus.innerText = 'Menghubungi server & memulai unduhan...';
+            ytProgressWrap.style.display = 'block';
+            ytProgressBar.style.width = '0%';
+            ytProgressBar.innerText = '0%';
+            ytMeta.style.display = 'none';
+            ytAfterBox.style.display = 'none';
+            ytDl.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/youtube-download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url, mode: ytMode, quality: ytQuality })
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    ytStatus.style.color = '#f87171';
+                    ytStatus.innerText = 'Gagal: ' + (data.error || 'Terjadi kesalahan');
+                    ytProgressWrap.style.display = 'none';
+                    ytBtn.disabled = false;
+                    return;
+                }
+
+                ytStatus.innerText = 'Mengunduh...';
+                ytPollTimer = setInterval(async () => {
+                    try {
+                        const sres = await fetch('/api/youtube-status/' + data.job_id);
+                        const sdata = await sres.json();
+
+                        ytProgressBar.style.width = (sdata.progress || 0) + '%';
+                        ytProgressBar.innerText = (sdata.progress || 0) + '%';
+                        if (sdata.meta_text) {
+                            ytMeta.style.display = 'block';
+                            ytMeta.innerText = sdata.meta_text;
+                        }
+
+                        if (sdata.status === 'downloading') {
+                            ytStatus.style.color = '#38bdf8';
+                            ytStatus.innerText = 'Mengunduh dari YouTube...';
+                        } else if (sdata.status === 'processing') {
+                            ytStatus.style.color = '#fbbf24';
+                            ytStatus.innerText = 'Menggabungkan stream & membersihkan metadata...';
+                        } else if (sdata.status === 'done') {
+                            clearInterval(ytPollTimer);
+                            ytProgressWrap.style.display = 'none';
+                            ytStatus.style.color = '#34d399';
+                            ytStatus.innerText = '✓ Selesai!' + (sdata.title ? ' "' + sdata.title + '"' : '');
+                            ytDl.href = sdata.download_url;
+                            ytDl.innerText = 'Unduh File (' + sdata.filename + ')';
+                            ytDl.style.display = 'block';
+
+                            const isAudio = sdata.filename.endsWith('.m4a') || sdata.filename.endsWith('.mp3');
+                            if (isAudio) {
+                                ytAudioPreview.src = sdata.download_url;
+                                ytAudioPreview.style.display = 'block';
+                                ytVidPreview.style.display = 'none';
+                            } else {
+                                ytVidPreview.src = sdata.download_url;
+                                ytVidPreview.style.display = 'inline-block';
+                                ytAudioPreview.style.display = 'none';
+                            }
+                            ytAfterBox.style.display = 'block';
+                            ytBtn.disabled = false;
+                        } else if (sdata.status === 'error') {
+                            clearInterval(ytPollTimer);
+                            ytProgressWrap.style.display = 'none';
+                            ytStatus.style.color = '#f87171';
+                            ytStatus.innerText = 'Gagal: ' + (sdata.error || 'kesalahan unduhan');
+                            ytBtn.disabled = false;
+                        }
+                    } catch (err) { /* keep polling */ }
+                }, 1500);
+            } catch (err) {
+                ytStatus.style.color = '#f87171';
+                ytStatus.innerText = 'Error menghubungi server.';
+                ytProgressWrap.style.display = 'none';
+                ytBtn.disabled = false;
+            }
+        }
+
+        // ================= EXTRACT AUDIO (VIDEO -> MP3) =================
+        let audioBitrate = 'high';
+        let audioFile = null;
+        let audioPollTimer = null;
+        let audioPreviewUrl = null;
+
+        const audioDropzone = document.getElementById('audioDropzone');
+        const audioFileInput = document.getElementById('audioFileInput');
+        const audioDropText = document.getElementById('audioDropText');
+        const audioBeforeBox = document.getElementById('audioBeforeBox');
+        const audioBeforeVid = document.getElementById('audioBeforeVid');
+        const audioBtn = document.getElementById('audioBtn');
+        const audioStatus = document.getElementById('audioStatus');
+        const audioProgressWrap = document.getElementById('audioProgressWrap');
+        const audioProgressBar = document.getElementById('audioProgressBar');
+        const audioMeta = document.getElementById('audioMeta');
+        const audioAfterBox = document.getElementById('audioAfterBox');
+        const audioAfterPlayer = document.getElementById('audioAfterPlayer');
+        const audioDl = document.getElementById('audioDownloadLink');
+
+        function setAudioBitrate(q) {
+            audioBitrate = q;
+            document.querySelectorAll('[data-abitrate]').forEach(el => {
+                el.classList.toggle('active', el.getAttribute('data-abitrate') === q);
+            });
+        }
+
+        function showAudioBeforePreview(f) {
+            if (audioPreviewUrl) {
+                URL.revokeObjectURL(audioPreviewUrl);
+                audioPreviewUrl = null;
+            }
+            if (!f) {
+                audioBeforeBox.style.display = 'none';
+                audioBeforeVid.style.display = 'none';
+                audioBeforeVid.pause();
+                return;
+            }
+            audioPreviewUrl = URL.createObjectURL(f);
+            audioBeforeVid.src = audioPreviewUrl;
+            audioBeforeVid.style.display = 'inline-block';
+            audioBeforeBox.style.display = 'block';
+        }
+
+        function handleAudioFileSelected(f) {
+            const isVideo = (f.type || '').startsWith('video/') ||
+                ['mp4', 'mov', 'webm', 'mkv', 'avi'].includes((f.name || '').split('.').pop().toLowerCase());
+            if (!isVideo) {
+                audioStatus.style.color = '#f87171';
+                audioStatus.innerText = 'Format tidak dikenali. Gunakan file video (MP4, MOV, WEBM, MKV).';
+                audioFile = null;
+                audioBtn.disabled = true;
+                showAudioBeforePreview(null);
+                return;
+            }
+            audioFile = f;
+            audioDropText.innerText = '✓ Video terdeteksi: ' + f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' MB)';
+            showAudioBeforePreview(f);
+            audioBtn.disabled = false;
+            audioStatus.innerHTML = '';
+            audioAfterBox.style.display = 'none';
+            audioDl.style.display = 'none';
+        }
+
+        audioFileInput.addEventListener('change', () => {
+            if (audioFileInput.files && audioFileInput.files.length > 0) {
+                handleAudioFileSelected(audioFileInput.files[0]);
+            }
+        });
+
+        ['dragenter', 'dragover'].forEach(ev => {
+            audioDropzone.addEventListener(ev, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                audioDropzone.classList.add('dragover');
+            });
+        });
+
+        ['dragleave', 'dragend'].forEach(ev => {
+            audioDropzone.addEventListener(ev, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                audioDropzone.classList.remove('dragover');
+            });
+        });
+
+        audioDropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            audioDropzone.classList.remove('dragover');
+            const dt = e.dataTransfer;
+            if (dt && dt.files && dt.files.length > 0) {
+                handleAudioFileSelected(dt.files[0]);
+            }
+        });
+
+        async function startAudioExtract() {
+            if (!audioFile) {
+                alert('Pilih video terlebih dahulu!');
+                return;
+            }
+            audioBtn.disabled = true;
+            audioStatus.style.color = '#38bdf8';
+            audioStatus.innerText = 'Mengunggah video...';
+            audioProgressWrap.style.display = 'block';
+            audioProgressBar.style.width = '0%';
+            audioProgressBar.innerText = '0%';
+            audioMeta.style.display = 'none';
+            audioAfterBox.style.display = 'none';
+            audioDl.style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                formData.append('video', audioFile);
+                formData.append('bitrate', audioBitrate);
+
+                const res = await fetch('/api/extract-audio', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (!data.success) {
+                    audioStatus.style.color = '#f87171';
+                    audioStatus.innerText = 'Gagal: ' + (data.error || 'Terjadi kesalahan');
+                    audioProgressWrap.style.display = 'none';
+                    audioBtn.disabled = false;
+                    return;
+                }
+
+                audioStatus.innerText = 'Mengekstrak audio...';
+                audioPollTimer = setInterval(async () => {
+                    try {
+                        const sres = await fetch('/api/extract-audio-status/' + data.job_id);
+                        const sdata = await sres.json();
+
+                        audioProgressBar.style.width = (sdata.progress || 0) + '%';
+                        audioProgressBar.innerText = (sdata.progress || 0) + '%';
+
+                        if (sdata.status === 'done') {
+                            clearInterval(audioPollTimer);
+                            audioProgressWrap.style.display = 'none';
+                            audioStatus.style.color = '#34d399';
+                            audioStatus.innerText = '✓ MP3 siap diunduh!';
+                            if (sdata.meta && sdata.meta.duration) {
+                                audioMeta.style.display = 'block';
+                                audioMeta.innerText = 'Durasi: ' + sdata.meta.duration + 's — Bitrate: ' + (sdata.meta.bitrate_kbps || '?') + ' kbps';
+                            }
+                            audioDl.href = sdata.download_url;
+                            audioDl.innerText = 'Unduh MP3 (' + sdata.filename + ')';
+                            audioDl.style.display = 'block';
+                            audioAfterPlayer.src = sdata.download_url;
+                            audioAfterPlayer.style.display = 'block';
+                            audioAfterBox.style.display = 'block';
+                            audioBtn.disabled = false;
+                        } else if (sdata.status === 'error') {
+                            clearInterval(audioPollTimer);
+                            audioProgressWrap.style.display = 'none';
+                            audioStatus.style.color = '#f87171';
+                            audioStatus.innerText = 'Gagal: ' + (sdata.error || 'kesalahan ekstraksi');
+                            audioBtn.disabled = false;
+                        }
+                    } catch (err) { /* keep polling */ }
+                }, 1200);
+            } catch (err) {
+                audioStatus.style.color = '#f87171';
+                audioStatus.innerText = 'Error menghubungi server.';
+                audioProgressWrap.style.display = 'none';
+                audioBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
