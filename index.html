@@ -72,9 +72,11 @@
         }
 
         .header-inner {
-            max-width: 1240px;
-            margin: 0 auto;
-            padding: 14px 24px;
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            padding: 14px 28px;
+            box-sizing: border-box;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -214,8 +216,11 @@
         }
 
         .spec-inner {
-            max-width: 1240px;
-            margin: 0 auto;
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            padding: 0 4px;
+            box-sizing: border-box;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -237,17 +242,18 @@
 
         /* ================= MAIN CONTAINER ================= */
         .main-wrapper {
-            max-width: 1240px;
             width: 100%;
-            margin: 0 auto;
-            padding: 28px 24px 60px 24px;
+            max-width: 100%;
+            margin: 0;
+            padding: 24px 28px 60px 28px;
+            box-sizing: border-box;
             flex: 1;
         }
 
         /* ================= STUDIO DUAL-COLUMN LAYOUT ================= */
         .studio-grid {
             display: grid;
-            grid-template-columns: 460px 1fr;
+            grid-template-columns: minmax(360px, 460px) 1fr;
             gap: 24px;
             align-items: start;
         }
@@ -378,14 +384,16 @@
             .text-input {
                 width: 100%;
                 flex: 1 1 100%;
-                padding: 11px 13px;
-                font-size: 13.5px;
+                padding: 12px 14px;
+                font-size: 16px;
+                box-sizing: border-box;
             }
             .btn-paste {
                 flex: 1 1 0;
                 justify-content: center;
-                height: 40px;
-                font-size: 12.5px;
+                height: 42px;
+                font-size: 13px;
+                box-sizing: border-box;
             }
             #ytInfoCard {
                 padding: 10px !important;
@@ -1012,8 +1020,10 @@
 
         /* ================= YOUTUBE & AUDIO SECTIONS ================= */
         .single-column-panel {
-            max-width: 760px;
-            margin: 0 auto;
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            box-sizing: border-box;
         }
 
         .input-group {
@@ -1064,7 +1074,7 @@
         /* Quality grid */
         .quality-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
             gap: 8px;
             margin-bottom: 18px;
         }
@@ -1617,17 +1627,11 @@
                     <div class="progress-wrap" id="ytProgressWrap"><div class="progress-bar" id="ytProgressBar">0%</div></div>
                     <div class="vmeta" id="ytMeta"></div>
 
-                    <!-- Result Box -->
-                    <div id="ytAfterBox" class="preview-box" style="margin-top: 18px; border-color: rgba(16, 185, 129, 0.3);">
-                        <div class="preview-header-bar" style="color: var(--color-success);">
-                            <span>✓ Berkas Siap Diunduh</span>
-                        </div>
-                        <div class="preview-media-frame">
-                            <video id="ytVidPreview" class="preview-media" style="display: none;" controls playsinline></video>
-                            <audio id="ytAudioPreview" style="display: none; width: 100%; padding: 20px;" controls></audio>
-                        </div>
-                        <a id="ytDownloadLink" class="btn-success" style="margin-top: 14px; display: none;" download>
-                            Unduh Berkas
+                    <!-- Fallback Action Box (Tanpa preview player) -->
+                    <div id="ytResultBox" style="display: none; margin-top: 16px;">
+                        <a id="ytDownloadLink" class="btn-success" style="width: 100%; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; font-size: 14px; box-sizing: border-box;" download>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span id="ytDownloadText">Unduh Berkas</span>
                         </a>
                     </div>
                 </div>
@@ -2168,9 +2172,8 @@
         const ytProgressWrap = document.getElementById('ytProgressWrap');
         const ytProgressBar = document.getElementById('ytProgressBar');
         const ytMeta = document.getElementById('ytMeta');
-        const ytAfterBox = document.getElementById('ytAfterBox');
-        const ytVidPreview = document.getElementById('ytVidPreview');
-        const ytAudioPreview = document.getElementById('ytAudioPreview');
+        const ytResultBox = document.getElementById('ytResultBox');
+        const ytDownloadText = document.getElementById('ytDownloadText');
         const ytDl = document.getElementById('ytDownloadLink');
         const ytInfoCard = document.getElementById('ytInfoCard');
         const ytInfoThumb = document.getElementById('ytInfoThumb');
@@ -2351,9 +2354,6 @@
             if (section !== 'cleaner') {
                 try { beforeVid.pause(); afterVid.pause(); } catch (e) {}
             }
-            if (section !== 'youtube') {
-                try { ytVidPreview.pause(); ytAudioPreview.pause(); } catch (e) {}
-            }
             if (section !== 'audio') {
                 try { audioBeforeVid.pause(); audioAfterPlayer.pause(); } catch (e) {}
             }
@@ -2406,7 +2406,7 @@
             ytProgressBar.style.width = '0%';
             ytProgressBar.innerText = '0%';
             ytMeta.style.display = 'none';
-            ytAfterBox.style.display = 'none';
+            if (ytResultBox) ytResultBox.style.display = 'none';
             ytDl.style.display = 'none';
 
             let token = localStorage.getItem('clean_auth_token') || '';
@@ -2494,23 +2494,14 @@
                             }
                             dlFrame.src = dlUrl;
 
-                            // Tombol manual unduhan sebagai fallback
+                            // Tombol manual unduhan sebagai fallback (tanpa preview)
                             ytDl.href = dlUrl;
-                            ytDl.innerText = '⬇ Unduh Berkas (' + (sdata.filename || 'video.mp4') + ')';
-                            ytDl.style.display = 'flex';
-
-                            // Tampilkan video player preview
-                            const isAudio = (sdata.filename || '').endsWith('.m4a') || (sdata.filename || '').endsWith('.mp3');
-                            if (isAudio) {
-                                ytAudioPreview.src = dlUrl;
-                                ytAudioPreview.style.display = 'block';
-                                ytVidPreview.style.display = 'none';
-                            } else {
-                                ytVidPreview.src = dlUrl;
-                                ytVidPreview.style.display = 'block';
-                                ytAudioPreview.style.display = 'none';
+                            if (ytDownloadText) {
+                                ytDownloadText.innerText = '⬇ Unduh Berkas (' + (sdata.filename || 'video.mp4') + ')';
                             }
-                            ytAfterBox.style.display = 'block';
+                            if (ytResultBox) {
+                                ytResultBox.style.display = 'block';
+                            }
                             ytBtn.disabled = false;
                         } else if (sdata.status === 'error') {
                             clearInterval(ytPollTimer);
