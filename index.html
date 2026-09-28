@@ -1766,20 +1766,24 @@
 
         // Check authentication state on page load
         async function initAuthCheck() {
-            const token = localStorage.getItem('clean_auth_token') || '';
+            let token = localStorage.getItem('clean_auth_token') || '';
             try {
-                const res = await fetch('/api/clean', {
-                    method: 'POST',
-                    headers: { 'X-Auth-Token': token }
+                const res = await fetch('/api/auth-status', {
+                    headers: token ? { 'X-Auth-Token': token } : {}
                 });
-                if (res.status === 401) {
-                    pinModal.style.display = 'flex';
-                    appCard.style.display = 'none';
-                    setTimeout(() => { if (pinInput) pinInput.focus(); }, 100);
-                } else {
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.token) {
+                        try { localStorage.setItem('clean_auth_token', data.token); } catch (e) {}
+                    }
                     pinModal.style.display = 'none';
                     appCard.style.display = 'flex';
+                    return;
                 }
+                // Jika 401 Unauthorized
+                pinModal.style.display = 'flex';
+                appCard.style.display = 'none';
+                setTimeout(() => { if (pinInput) pinInput.focus(); }, 100);
             } catch (e) {
                 pinModal.style.display = 'flex';
                 appCard.style.display = 'none';
@@ -2405,33 +2409,48 @@
             ytAfterBox.style.display = 'none';
             ytDl.style.display = 'none';
 
-            // === DIRECT STREAM — IDM Style ===
-            // Gunakan window.open() agar IDM dapat mendeteksi dan mengambil alih unduhan
-            const token = localStorage.getItem('clean_auth_token') || '';
+            // === DIRECT STREAM — IDM & Browser 1-Click ===
+            let token = localStorage.getItem('clean_auth_token') || '';
+            if (!token) {
+                try {
+                    const r = await fetch('/api/auth-status');
+                    if (r.ok) {
+                        const d = await r.json();
+                        if (d.token) {
+                            token = d.token;
+                            localStorage.setItem('clean_auth_token', token);
+                        }
+                    }
+                } catch (e) {}
+            }
+
             const encodedUrl = encodeURIComponent(url);
             const quality = ytQuality || 720;
             const mode = ytMode || 'video';
             const ext = (mode === 'audio') ? 'm4a' : 'mp4';
             const streamUrl = `/api/youtube-stream?url=${encodedUrl}&mode=${mode}&quality=${quality}&token=${encodeURIComponent(token)}`;
 
-            // window.open() = cara yang dikenali IDM sebagai "download baru"
-            // IDM hook pada event window.open dengan URL yang mengembalikan Content-Disposition: attachment
-            const dlWin = window.open(streamUrl, '_blank');
-
-            // Fallback jika window.open diblokir popup blocker
-            if (!dlWin || dlWin.closed || typeof dlWin.closed === 'undefined') {
-                // Fallback: navigasi langsung di tab yang sama
-                window.location.href = streamUrl;
+            // Trigger unduhan via hidden iframe:
+            // 1. Tidak membuka tab baru kosong di browser
+            // 2. IDM extension secara otomatis mendeteksi response attachment/video dan memunculkan popup IDM
+            // 3. Jika IDM tidak terpasang, browser langsung mengunduh via download bar bawaan
+            let dlFrame = document.getElementById('yt-stream-frame');
+            if (!dlFrame) {
+                dlFrame = document.createElement('iframe');
+                dlFrame.id = 'yt-stream-frame';
+                dlFrame.style.display = 'none';
+                document.body.appendChild(dlFrame);
             }
+            dlFrame.src = streamUrl;
 
-            // Tampilkan status dan fallback link manual
+            // Tampilkan status dan tombol download langsung
             ytProgressWrap.style.display = 'none';
             ytStatus.style.color = 'var(--color-success)';
-            ytStatus.innerHTML = '⬇ Unduhan dimulai! <small style="color:var(--text-muted)">Jika IDM muncul klik Start, jika tidak cek bar unduhan browser.</small>';
+            ytStatus.innerHTML = '⬇ Mengirim stream ke IDM / Browser... <small style="color:var(--text-muted)">Jika IDM terpasang klik Start Download.</small>';
             ytDl.href = streamUrl;
             ytDl.setAttribute('download', `video_${quality}p_youtube.${ext}`);
-            ytDl.setAttribute('target', '_blank');
-            ytDl.innerText = `↗ Klik di sini jika tidak otomatis terunduh`;
+            ytDl.removeAttribute('target');
+            ytDl.innerText = `⬇ Klik di sini jika unduhan belum muncul`;
             ytDl.style.display = 'flex';
             ytBtn.disabled = false;
 

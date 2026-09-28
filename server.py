@@ -50,7 +50,7 @@ def is_request_authenticated():
 
 @app.before_request
 def check_auth():
-    if request.path == "/api/verify-pin":
+    if request.path in ("/api/verify-pin", "/api/auth-status"):
         return None
     if not is_request_authenticated():
         if request.path.startswith("/api/"):
@@ -316,6 +316,14 @@ def verify_pin():
         )
         return resp
     return jsonify({"success": False, "error": "PIN salah"}), 403
+
+
+@app.route("/api/auth-status", methods=["GET"])
+def auth_status():
+    if is_request_authenticated():
+        token = create_auth_token()
+        return jsonify({"authenticated": True, "token": token})
+    return jsonify({"authenticated": False, "error": "Unauthorized"}), 401
 
 
 @app.route("/uploads/<path:filename>")
@@ -908,7 +916,6 @@ def youtube_stream():
         "Content-Type": mime,
         "X-Accel-Buffering": "no",      # Nonaktifkan buffering Nginx
         "Cache-Control": "no-cache",
-        "Transfer-Encoding": "chunked",
     }
     return Response(stream_with_context(generate()), headers=headers, mimetype=mime)
 
