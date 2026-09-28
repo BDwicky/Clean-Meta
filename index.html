@@ -1732,56 +1732,50 @@
                         </div>
                     </div>
 
-                    <!-- Stream Type Mode -->
-                    <div class="mode-selector" style="margin-bottom: 14px;">
-                        <div class="mode-opt active" id="ytModeVideo" onclick="setYtMode('video')">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                            Video & Audio
-                        </div>
-                        <div class="mode-opt" id="ytModeAudio" onclick="setYtMode('audio')">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                            Audio Saja
-                        </div>
+                    <!-- Scanning / Analyzing State Card -->
+                    <div id="ytAnalyzingCard" style="display: none; text-align: center; padding: 26px 16px; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: var(--radius-md); margin-bottom: 16px;">
+                        <div class="pulse-dot" style="margin: 0 auto 10px auto; width: 10px; height: 10px; background: #818cf8;"></div>
+                        <div style="font-weight: 600; font-size: 13.5px; color: #a5b4fc;">Mendeteksi & Menganalisis Video YouTube...</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">Membaca format video, ketersediaan resolusi, dan metadata stream</div>
                     </div>
 
-                    <!-- Resolution Quality Grid (Full spectrum available) -->
-                    <div id="ytQualityRow">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">PILIHAN RESOLUSI VIDEO</span>
-                            <span id="ytResStatus" style="font-size: 11.5px; color: var(--text-muted);">Pilih resolusi target (1080p / 720p / 4K)</span>
+                    <!-- Empty State saat belum ada link video -->
+                    <div id="ytWaitingState" style="text-align: center; padding: 36px 18px; background: rgba(255,255,255,0.015); border: 1px dashed var(--border-medium); border-radius: var(--radius-md); margin-bottom: 16px;">
+                        <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(239, 68, 68, 0.1); color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto;">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
                         </div>
-                        <div class="quality-grid" id="ytQualityGrid">
-                            <div class="quality-card" data-ytq="360" onclick="setYtQuality(360)">
-                                <div class="quality-name">360p</div>
-                                <div class="quality-sub">Hemat Kuota</div>
-                            </div>
-                            <div class="quality-card" data-ytq="480" onclick="setYtQuality(480)">
-                                <div class="quality-name">480p</div>
-                                <div class="quality-sub">SD Standar</div>
-                            </div>
-                            <div class="quality-card" data-ytq="720" onclick="setYtQuality(720)">
-                                <div class="quality-name">720p</div>
-                                <div class="quality-sub">HD Standar</div>
-                            </div>
-                            <div class="quality-card active" data-ytq="1080" onclick="setYtQuality(1080)">
-                                <div class="quality-name">1080p</div>
-                                <div class="quality-sub">Full HD / Enhanced</div>
-                            </div>
-                            <div class="quality-card" data-ytq="1440" onclick="setYtQuality(1440)">
-                                <div class="quality-name">1440p</div>
-                                <div class="quality-sub">2K QHD</div>
-                            </div>
-                            <div class="quality-card" data-ytq="2160" onclick="setYtQuality(2160)">
-                                <div class="quality-name">4K</div>
-                                <div class="quality-sub">Ultra HD</div>
-                            </div>
-                        </div>
+                        <div style="font-weight: 600; font-size: 14.5px; color: var(--text-primary); margin-bottom: 4px;">Menunggu Tautan Video YouTube</div>
+                        <div style="font-size: 12.5px; color: var(--text-muted); max-width: 420px; margin: 0 auto;">Tempelkan tautan video YouTube di atas. Pilihan resolusi asli dan kontrol unduhan akan otomatis muncul setelah video berhasil terdeteksi.</div>
                     </div>
 
-                    <button class="btn-primary" id="ytBtn" onclick="startYoutubeDownload()">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        Unduh Langsung — 1 Klik
-                    </button>
+                    <!-- Configuration Area (Hanya muncul saat video terdeteksi) -->
+                    <div id="ytConfigArea" style="display: none;">
+                        <!-- Stream Type Mode -->
+                        <div class="mode-selector" style="margin-bottom: 14px;">
+                            <div class="mode-opt active" id="ytModeVideo" onclick="setYtMode('video')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                                Video & Audio
+                            </div>
+                            <div class="mode-opt" id="ytModeAudio" onclick="setYtMode('audio')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                                Audio Saja
+                            </div>
+                        </div>
+
+                        <!-- Resolution Quality Grid (Dihasilkan dinamis sesuai video) -->
+                        <div id="ytQualityRow">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">PILIHAN RESOLUSI VIDEO</span>
+                                <span id="ytResStatus" style="font-size: 11.5px; color: var(--text-muted);">Pilih resolusi target</span>
+                            </div>
+                            <div class="quality-grid" id="ytQualityGrid"></div>
+                        </div>
+
+                        <button class="btn-primary" id="ytBtn" onclick="startYoutubeDownload()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Unduh Langsung — 1 Klik
+                        </button>
+                    </div>
 
                     <div class="status-box" id="ytStatus"></div>
                     <div class="progress-wrap" id="ytProgressWrap"><div class="progress-bar" id="ytProgressBar">0%</div></div>
@@ -2592,6 +2586,9 @@
         const ytInfoMaxRes = document.getElementById('ytInfoMaxRes');
         const ytQualityGrid = document.getElementById('ytQualityGrid');
         const ytResStatus = document.getElementById('ytResStatus');
+        const ytWaitingState = document.getElementById('ytWaitingState');
+        const ytAnalyzingCard = document.getElementById('ytAnalyzingCard');
+        const ytConfigArea = document.getElementById('ytConfigArea');
 
         function extractYoutubeUrl(raw) {
             if (!raw) return '';
@@ -2627,6 +2624,12 @@
         }
 
         ytUrlInput.addEventListener('input', () => {
+            const raw = ytUrlInput.value.trim();
+            if (!raw) {
+                clearTimeout(ytInfoTimer);
+                inspectYoutubeUrl();
+                return;
+            }
             clearTimeout(ytInfoTimer);
             ytInfoTimer = setTimeout(() => {
                 inspectYoutubeUrl();
@@ -2691,8 +2694,10 @@
             const url = extractYoutubeUrl(raw);
             if (!url || !isLikelyYoutubeUrl(url)) {
                 if (ytInfoCard) ytInfoCard.style.display = 'none';
-                if (ytResStatus) ytResStatus.innerText = 'Pilih resolusi target (1080p / 720p / 4K)';
-                renderResolutionGrid(DEFAULT_RESOLUTIONS, ytQuality || 1080);
+                if (ytAnalyzingCard) ytAnalyzingCard.style.display = 'none';
+                if (ytConfigArea) ytConfigArea.style.display = 'none';
+                if (ytWaitingState) ytWaitingState.style.display = 'block';
+                if (ytResultBox) ytResultBox.style.display = 'none';
                 lastInspectedUrl = '';
                 return;
             }
@@ -2702,7 +2707,11 @@
             }
 
             lastInspectedUrl = url;
-            if (ytResStatus) ytResStatus.innerHTML = '<span style="color: #818cf8;">Menganalisis resolusi video YouTube...</span>';
+            if (ytWaitingState) ytWaitingState.style.display = 'none';
+            if (ytInfoCard) ytInfoCard.style.display = 'none';
+            if (ytConfigArea) ytConfigArea.style.display = 'none';
+            if (ytAnalyzingCard) ytAnalyzingCard.style.display = 'block';
+            if (ytResultBox) ytResultBox.style.display = 'none';
 
             try {
                 const res = await fetch('/api/youtube-info', {
@@ -2725,6 +2734,9 @@
                 } catch (pe) {
                     data = { success: false, error: 'Respons server tidak valid' };
                 }
+
+                if (ytAnalyzingCard) ytAnalyzingCard.style.display = 'none';
+                if (ytConfigArea) ytConfigArea.style.display = 'block';
 
                 if (data.success) {
                     if (ytInfoCard) ytInfoCard.style.display = 'flex';
@@ -2754,6 +2766,8 @@
                     renderResolutionGrid(DEFAULT_RESOLUTIONS, ytQuality || 1080);
                 }
             } catch (err) {
+                if (ytAnalyzingCard) ytAnalyzingCard.style.display = 'none';
+                if (ytConfigArea) ytConfigArea.style.display = 'block';
                 if (ytResStatus) ytResStatus.innerHTML = '<span style="color: #fbbf24;">Info otomatis sedang tertunda — Pilihan 1080p / 720p tetap aktif untuk diunduh langsung.</span>';
                 renderResolutionGrid(DEFAULT_RESOLUTIONS, ytQuality || 1080);
             }
@@ -2782,6 +2796,13 @@
 
             if (section === 'history') {
                 renderHistoryView();
+            } else if (section === 'youtube') {
+                if (!ytUrlInput.value.trim()) {
+                    if (ytWaitingState) ytWaitingState.style.display = 'block';
+                    if (ytConfigArea) ytConfigArea.style.display = 'none';
+                    if (ytInfoCard) ytInfoCard.style.display = 'none';
+                    if (ytAnalyzingCard) ytAnalyzingCard.style.display = 'none';
+                }
             }
         }
 
