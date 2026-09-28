@@ -1601,23 +1601,21 @@
                             <span style="font-size: 12px; color: var(--color-success); font-weight: 600;" id="outputBadge">Siap Memproses</span>
                         </div>
 
-                        <!-- Output Preview (When Done) -->
-                        <div id="afterPreviewBox" class="preview-box" style="border-color: rgba(16, 185, 129, 0.3);">
-                            <div class="preview-header-bar" style="color: var(--color-success);">
-                                <span style="display: flex; align-items: center; gap: 6px;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                                    Hasil Sanitasi (Bebas Metadata AI)
-                                </span>
-                                <span style="font-size: 11px; color: var(--color-success);">Terverifikasi Bersih</span>
+                        <!-- Output Action Box (Tanpa render ulang media) -->
+                        <div id="afterActionBox" style="display: none; margin-bottom: 16px;">
+                            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 12px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; color: var(--color-success); font-weight: 700; font-size: 13.5px;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                        <span>Sanitasi Selesai — Berkas Siap Diunduh</span>
+                                    </div>
+                                    <span id="afterActionBadge" style="font-size: 11px; background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 700; padding: 2px 8px; border-radius: 4px;">100% Bit-Exact</span>
+                                </div>
+                                <a id="downloadLink" class="btn-success" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; font-size: 14px; text-decoration: none; box-sizing: border-box; font-weight: 700;" download>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    <span id="downloadBtnText">Unduh Berkas Bersih</span>
+                                </a>
                             </div>
-                            <div class="preview-media-frame">
-                                <img id="afterImgPreview" class="preview-media" style="display: none;" alt="Preview Hasil Bersih">
-                                <video id="afterVidPreview" class="preview-media" style="display: none;" controls playsinline></video>
-                            </div>
-                            <a id="downloadLink" class="btn-success" style="display: none; margin-top: 14px;" download>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                Unduh Hasil Sanitasi
-                            </a>
                         </div>
 
                         <!-- Forensic Logs (Dynamic Report) -->
@@ -2221,9 +2219,9 @@
         const beforeBox = document.getElementById('beforePreviewBox');
         const beforeImg = document.getElementById('beforeImgPreview');
         const beforeVid = document.getElementById('beforeVidPreview');
-        const afterBox = document.getElementById('afterPreviewBox');
-        const afterImg = document.getElementById('afterImgPreview');
-        const afterVid = document.getElementById('afterVidPreview');
+        const afterBox = document.getElementById('afterActionBox');
+        const downloadBtnText = document.getElementById('downloadBtnText');
+        const afterActionBadge = document.getElementById('afterActionBadge');
 
         let previewObjectUrl = null;
 
@@ -2257,18 +2255,22 @@
             beforeBox.style.display = 'block';
         }
 
-        function showAfterPreview(url, isVideo) {
-            if (isVideo) {
-                afterVid.src = url;
-                afterVid.style.display = 'block';
-                afterImg.style.display = 'none';
-            } else {
-                afterImg.src = url;
-                afterImg.style.display = 'block';
-                afterVid.style.display = 'none';
-                afterVid.pause();
+        function showAfterAction(url, filename, isVideo) {
+            const finalUrl = getDownloadUrlWithToken(url);
+            if (dl) {
+                dl.href = finalUrl;
+                dl.setAttribute('download', filename || (isVideo ? 'video_clean.mp4' : 'foto_clean.jpg'));
+                dl.style.display = 'flex';
             }
-            afterBox.style.display = 'block';
+            if (downloadBtnText) {
+                downloadBtnText.innerText = isVideo
+                    ? 'Unduh Video Bersih (' + (filename || 'video.mp4') + ')'
+                    : 'Unduh Foto Bersih (' + (filename || 'foto.jpg') + ')';
+            }
+            if (afterActionBadge) {
+                afterActionBadge.innerText = isVideo ? 'Lossless Stream Copy' : '100% Bit-Exact';
+            }
+            if (afterBox) afterBox.style.display = 'block';
             emptySpecCard.style.display = 'none';
         }
 
@@ -2495,10 +2497,7 @@
                 statusEl.innerText = '✓ Selesai. Metadata AI dibersihkan & EXIF disuntikkan.';
                 outputBadge.innerText = '✓ Selesai & Terverifikasi';
                 outputBadge.style.color = 'var(--color-success)';
-                dl.href = data.download_url;
-                dl.innerText = 'Unduh Hasil Sanitasi (' + data.filename + ')';
-                dl.style.display = 'flex';
-                showAfterPreview(data.download_url, false);
+                showAfterAction(data.download_url, data.filename, false);
                 renderReport(data.report, '[3] Metadata Kamera Asli yang Disuntikkan (EXIF)');
                 try {
                     addHistoryItem({
@@ -2565,10 +2564,7 @@
                         statusEl.innerText = '✓ Video berhasil disanitasi secara lossless!';
                         outputBadge.innerText = '✓ Selesai & Terverifikasi';
                         outputBadge.style.color = 'var(--color-success)';
-                        dl.href = sdata.download_url;
-                        dl.innerText = 'Unduh Video Bersih (' + sdata.filename + ')';
-                        dl.style.display = 'flex';
-                        showAfterPreview(sdata.download_url, true);
+                        showAfterAction(sdata.download_url, sdata.filename, true);
                         renderReport(sdata.report, '[3] Metadata Kamera Asli yang Disuntikkan (QuickTime/EXIF)');
                         try {
                             const vMetaStr = sdata.meta ? `${sdata.meta.resolution || ''} • ${sdata.meta.fps || 30}fps • ${(sdata.meta.duration || 0).toFixed(1)}s` : 'Lossless Stream Copy';
@@ -2829,7 +2825,7 @@
 
         function showSection(section) {
             if (section !== 'cleaner') {
-                try { beforeVid.pause(); afterVid.pause(); } catch (e) {}
+                try { if (beforeVid) beforeVid.pause(); } catch (e) {}
             }
             if (section !== 'audio') {
                 try { audioBeforeVid.pause(); audioAfterPlayer.pause(); } catch (e) {}
