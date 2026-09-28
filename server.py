@@ -9,7 +9,7 @@ import threading
 import hashlib
 import hmac
 
-from flask import Flask, request, jsonify, send_from_directory, make_response
+from flask import Flask, request, jsonify, send_from_directory, make_response, Response, stream_with_context
 
 app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -826,6 +826,91 @@ def youtube_status(job_id):
     elif job["status"] == "error":
         resp["error"] = job.get("error")
     return jsonify(resp)
+
+
+@app.route("/api/youtube-stream")
+def youtube_stream():
+    """Direct streaming download route — yt-dlp stdout di-pipe langsung ke browser.
+    Tidak ada file yang disimpan di disk. Browser / IDM menerima byte secara real-time.
+    Dipanggil via GET dengan query params: url, mode, quality, token.
+    """
+    # Auth via query param token (karena ini dibuka via <a href> atau window.location)
+    token = request.args.get("token") or request.headers.get("X-Auth-Token") or ""
+    cookie_token = request.cookies.get("clean_auth")
+    if not (verify_auth_token(token) or verify_auth_token(cookie_token)):
+        return Response("Unauthorized: Masukkan PIN terlebih dahulu", status=401)
+
+    raw_url = (request.args.get("url") or "").strip()
+    url = clean_youtube_url(raw_url)
+    mode = (request.args.get("mode") or "video").strip().lower()
+    raw_q = request.args.get("quality") or "720"
+    try:
+        quality = int(raw_q)
+    except (ValueError, TypeError):
+        quality = 720
+
+    if not url or not is_valid_youtube_url(url):
+        return Response("URL YouTube tidak valid", status=400)
+    if mode not in ("video", "audio"):
+        mode = "video"
+    if quality not in (144, 240, 360, 480, 720, 1080, 1440, 2160):
+        quality = 720
+
+    ytdlp_bin = get_ytdlp_bin()
+    if not (os.path.exists(ytdlp_bin) or shutil.which(ytdlp_bin)):
+        return Response("yt-dlp tidak tersedia di server", status=500)
+
+    # Tentukan format dan nama file output
+    if mode == "audio":
+        fmt = "bestaudio[ext=m4a]/bestaudio"
+        mime = "audio/mp4"
+        dl_filename = "audio_youtube.m4a"
+    else:
+        fmt = f"bestvideo[height<={quality}]+bestaudio[ext=m4a]/bestvideo[height<={quality}]+bestaudio/best[height<={quality}]/best"
+        mime = "video/mp4"
+        dl_filename = f"video_{quality}p_youtube.mp4"
+
+    cmd = [
+        ytdlp_bin,
+        "--no-playlist",
+        "--no-warnings",
+        "--no-check-certificates",
+        "-f", fmt,
+        "-o", "-",   # Output ke stdout — tidak ada file di disk
+        url,
+    ]
+
+    def generate():
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                bufsize=65536,
+            )
+            while True:
+                chunk = proc.stdout.read(65536)  # Baca 64KB per chunk
+                if not chunk:
+                    break
+                yield chunk
+            proc.wait()
+        except GeneratorExit:
+            # Pengguna menutup koneksi / membatalkan unduhan
+            try:
+                proc.kill()
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    headers = {
+        "Content-Disposition": f'attachment; filename="{dl_filename}"',
+        "Content-Type": mime,
+        "X-Accel-Buffering": "no",      # Nonaktifkan buffering Nginx
+        "Cache-Control": "no-cache",
+        "Transfer-Encoding": "chunked",
+    }
+    return Response(stream_with_context(generate()), headers=headers, mimetype=mime)
 
 
 # ------------------------------------------------------------------

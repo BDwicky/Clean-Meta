@@ -1610,7 +1610,7 @@
 
                     <button class="btn-primary" id="ytBtn" onclick="startYoutubeDownload()">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        Mulai Unduh dari YouTube
+                        Unduh Langsung — 1 Klik
                     </button>
 
                     <div class="status-box" id="ytStatus"></div>
@@ -2405,121 +2405,35 @@
             ytAfterBox.style.display = 'none';
             ytDl.style.display = 'none';
 
-            try {
-                const res = await fetch('/api/youtube-download', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Auth-Token': localStorage.getItem('clean_auth_token') || ''
-                    },
-                    body: JSON.stringify({ url: url, mode: ytMode, quality: ytQuality || 720 })
-                });
+            // === PILIHAN 1: Direct Stream — 1 Klik, seperti IDM ===
+            // Buat URL stream langsung ke endpoint /api/youtube-stream
+            const token = localStorage.getItem('clean_auth_token') || '';
+            const encodedUrl = encodeURIComponent(url);
+            const streamUrl = `/api/youtube-stream?url=${encodedUrl}&mode=${ytMode}&quality=${ytQuality || 720}&token=${encodeURIComponent(token)}`;
 
-                if (res.status === 401) {
-                    ytStatus.style.color = '#ef4444';
-                    ytStatus.innerText = 'Sesi PIN telah kedaluwarsa. Silakan masukkan PIN kembali.';
-                    ytProgressWrap.style.display = 'none';
-                    ytBtn.disabled = false;
-                    lockSession();
-                    return;
-                }
+            // Buka link stream — ini yang memicu dialog IDM atau download bar browser secara instan
+            const dlAnchor = document.createElement('a');
+            dlAnchor.href = streamUrl;
+            dlAnchor.setAttribute('download', `video_${ytQuality || 720}p_youtube.mp4`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            setTimeout(() => dlAnchor.remove(), 1000);
 
-                let data = null;
-                try {
-                    data = await res.json();
-                } catch (parseErr) {
-                    throw new Error(`Server error (${res.status}: ${res.statusText || 'Gagal memproses respons'})`);
-                }
+            // Tampilkan status dan link manual sebagai fallback
+            ytProgressWrap.style.display = 'none';
+            ytStatus.style.color = 'var(--color-success)';
+            ytStatus.innerText = '⬇ Unduhan dimulai! Cek bar unduhan browser atau popup IDM Anda.';
+            ytDl.href = streamUrl;
+            ytDl.innerText = 'Klik di sini jika unduhan tidak berjalan otomatis';
+            ytDl.setAttribute('download', `video_${ytQuality || 720}p_youtube.mp4`);
+            ytDl.setAttribute('target', '_blank');
+            ytDl.style.display = 'flex';
+            ytBtn.disabled = false;
+            ytAfterBox.style.display = 'none'; // Tidak perlu preview karena file tidak di-cache
 
-                if (!res.ok || !data.success) {
-                    ytStatus.style.color = '#ef4444';
-                    ytStatus.innerText = 'Gagal: ' + (data.error || `Kesalahan server (${res.status})`);
-                    ytProgressWrap.style.display = 'none';
-                    ytBtn.disabled = false;
-                    return;
-                }
-
-                ytStatus.innerText = 'Mengunduh stream dari YouTube...';
-                let pollFailCount = 0;
-
-                ytPollTimer = setInterval(async () => {
-                    try {
-                        const sres = await fetch('/api/youtube-status/' + data.job_id, {
-                            headers: { 'X-Auth-Token': localStorage.getItem('clean_auth_token') || '' }
-                        });
-
-                        if (sres.status === 401) {
-                            clearInterval(ytPollTimer);
-                            ytPollTimer = null;
-                            ytStatus.innerText = 'Sesi berakhir.';
-                            lockSession();
-                            return;
-                        }
-
-                        const sdata = await sres.json();
-                        pollFailCount = 0;
-
-                        ytProgressBar.style.width = (sdata.progress || 0) + '%';
-                        ytProgressBar.innerText = (sdata.progress || 0) + '%';
-                        if (sdata.meta_text) {
-                            ytMeta.style.display = 'block';
-                            ytMeta.innerText = sdata.meta_text;
-                        }
-
-                        if (sdata.status === 'downloading') {
-                            ytStatus.style.color = '#818cf8';
-                            ytStatus.innerText = 'Mengunduh stream...';
-                        } else if (sdata.status === 'processing') {
-                            ytStatus.style.color = '#fbbf24';
-                            ytStatus.innerText = 'Menggabungkan stream video dan audio...';
-                        } else if (sdata.status === 'done') {
-                            clearInterval(ytPollTimer);
-                            ytPollTimer = null;
-                            ytProgressWrap.style.display = 'none';
-                            ytStatus.style.color = 'var(--color-success)';
-                            ytStatus.innerText = '✓ Selesai!' + (sdata.title ? ' ' + sdata.title : '');
-                            ytDl.href = sdata.download_url;
-                            ytDl.innerText = 'Unduh Berkas (' + sdata.filename + ')';
-                            ytDl.style.display = 'flex';
-
-                            const isAudio = sdata.filename.endsWith('.m4a') || sdata.filename.endsWith('.mp3');
-                            if (isAudio) {
-                                ytAudioPreview.src = sdata.download_url;
-                                ytAudioPreview.style.display = 'block';
-                                ytVidPreview.style.display = 'none';
-                            } else {
-                                ytVidPreview.src = sdata.download_url;
-                                ytVidPreview.style.display = 'block';
-                                ytAudioPreview.style.display = 'none';
-                            }
-                            ytAfterBox.style.display = 'block';
-                            ytBtn.disabled = false;
-                        } else if (sdata.status === 'error') {
-                            clearInterval(ytPollTimer);
-                            ytPollTimer = null;
-                            ytProgressWrap.style.display = 'none';
-                            ytStatus.style.color = '#ef4444';
-                            ytStatus.innerText = 'Gagal: ' + (sdata.error || 'kesalahan unduhan');
-                            ytBtn.disabled = false;
-                        }
-                    } catch (err) {
-                        pollFailCount++;
-                        if (pollFailCount > 8) {
-                            clearInterval(ytPollTimer);
-                            ytPollTimer = null;
-                            ytStatus.style.color = '#ef4444';
-                            ytStatus.innerText = 'Pemantauan terputus (koneksi tidak stabil). Berkas mungkin masih diproses di latar belakang.';
-                            ytBtn.disabled = false;
-                        }
-                    }
-                }, 1200);
-            } catch (err) {
-                ytStatus.style.color = '#ef4444';
-                ytStatus.innerText = 'Kesalahan saat menghubungi server: ' + (err.message || 'Periksa koneksi Anda.');
-                ytProgressWrap.style.display = 'none';
-                ytBtn.disabled = false;
-            }
+            return; // Selesai — tidak perlu try/fetch/polling lagi
         }
+
 
         // ================= EXTRACT AUDIO (VIDEO -> MP3) =================
         let audioBitrate = 'high';
