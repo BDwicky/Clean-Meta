@@ -896,6 +896,28 @@
             word-break: break-all;
         }
 
+        .btn-toggle-tags {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            font-size: 11.5px;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-toggle-tags:hover {
+            background: rgba(239, 68, 68, 0.18);
+            border-color: rgba(239, 68, 68, 0.45);
+            color: #ffffff;
+        }
+
         /* EXIF Data Table */
         .exif-table-wrapper {
             overflow-x: auto;
@@ -2372,11 +2394,29 @@
             if (afterBox) afterBox.style.display = 'none';
         }
 
+        let tagsExpanded = false;
+        function toggleRemovedTags() {
+            tagsExpanded = !tagsExpanded;
+            const extras = document.querySelectorAll('.extra-tag');
+            extras.forEach(el => {
+                el.style.display = tagsExpanded ? 'inline-block' : 'none';
+            });
+            const btnText = document.getElementById('btnToggleTagsText');
+            const btnIcon = document.getElementById('btnToggleTagsIcon');
+            if (btnText) {
+                btnText.innerText = tagsExpanded ? 'Sembunyikan detail tag' : `Lihat ${extras.length} detail tag lainnya`;
+            }
+            if (btnIcon) {
+                btnIcon.style.transform = tagsExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+        }
+
         function renderReport(report, exifTitle) {
             document.getElementById('exifTitle').innerText = exifTitle;
             const removedContainer = document.getElementById('removedContainer');
             const removedCount = document.getElementById('removedCount');
             removedContainer.innerHTML = '';
+            tagsExpanded = false;
 
             const items = report.removed_items || [];
             removedCount.innerText = items.length;
@@ -2384,13 +2424,31 @@
             if (items.length > 0) {
                 const tagDiv = document.createElement('div');
                 tagDiv.className = 'tag-pill-list';
-                items.forEach(item => {
+                const INITIAL_LIMIT = 5;
+                items.forEach((item, idx) => {
                     const span = document.createElement('span');
-                    span.className = 'tag-pill';
+                    span.className = 'tag-pill' + (idx >= INITIAL_LIMIT ? ' extra-tag' : '');
+                    if (idx >= INITIAL_LIMIT) {
+                        span.style.display = 'none';
+                    }
                     span.innerText = item;
                     tagDiv.appendChild(span);
                 });
                 removedContainer.appendChild(tagDiv);
+
+                if (items.length > INITIAL_LIMIT) {
+                    const remaining = items.length - INITIAL_LIMIT;
+                    const btnToggle = document.createElement('button');
+                    btnToggle.type = 'button';
+                    btnToggle.className = 'btn-toggle-tags';
+                    btnToggle.id = 'btnToggleTags';
+                    btnToggle.onclick = toggleRemovedTags;
+                    btnToggle.innerHTML = `
+                        <span id="btnToggleTagsText">Lihat ${remaining} detail tag lainnya</span>
+                        <svg id="btnToggleTagsIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+                    `;
+                    removedContainer.appendChild(btnToggle);
+                }
             } else {
                 const emptyP = document.createElement('p');
                 emptyP.style.color = 'var(--text-muted)';
