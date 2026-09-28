@@ -17,6 +17,22 @@ STATIC_DIR = "/var/www/clean-ai" if os.path.exists("/var/www/clean-ai") else BAS
 UPLOAD_DIR = "/var/www/clean-ai/uploads" if os.path.exists("/var/www/clean-ai/uploads") else os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+def cleanup_old_uploads():
+    """Hapus file unduhan/unggahan lama (> 12 jam) agar storage server tetap terjaga sinkron dengan riwayat sesi."""
+    try:
+        now = datetime.datetime.now().timestamp()
+        for fname in os.listdir(UPLOAD_DIR):
+            fpath = os.path.join(UPLOAD_DIR, fname)
+            if os.path.isfile(fpath):
+                # Retensi 12 Jam = 43,200 detik
+                if now - os.path.getmtime(fpath) > 43200:
+                    try:
+                        os.remove(fpath)
+                    except Exception:
+                        pass
+    except Exception:
+        pass
+
 PIN_CODE = "123123"
 SECRET_KEY = "clean-ai-secret-pin-salt-" + hashlib.sha256(PIN_CODE.encode()).hexdigest()[:16]
 
@@ -342,6 +358,7 @@ def clean():
         return jsonify({"error": "Empty file"}), 400
 
     clean_token = uuid.uuid4().hex[:8]
+    cleanup_old_uploads()
     orig_ext = os.path.splitext(file.filename)[1] or ".jpg"
     if orig_ext.lower() not in [".jpg", ".jpeg", ".png", ".webp"]:
         orig_ext = ".jpg"
@@ -376,6 +393,7 @@ def clean_video():
         return jsonify({"error": "Empty file"}), 400
 
     job_id = uuid.uuid4().hex[:12]
+    cleanup_old_uploads()
     orig_ext = os.path.splitext(file.filename)[1] or ".mp4"
     if orig_ext.lower() not in [".mp4", ".mov", ".webm", ".mkv"]:
         orig_ext = ".mp4"
@@ -476,21 +494,6 @@ def is_valid_youtube_url(url):
     return bool(_re.match(pattern, url, _re.IGNORECASE))
 
 YT_JOBS = {}  # job_id -> {status, progress, filename, title, error}
-
-def cleanup_old_uploads():
-    """Hapus file unduhan/unggahan lama (> 2 jam) agar storage server tetap lega."""
-    try:
-        now = datetime.datetime.now().timestamp()
-        for fname in os.listdir(UPLOAD_DIR):
-            fpath = os.path.join(UPLOAD_DIR, fname)
-            if os.path.isfile(fpath):
-                if now - os.path.getmtime(fpath) > 7200:
-                    try:
-                        os.remove(fpath)
-                    except Exception:
-                        pass
-    except Exception:
-        pass
 
 def run_youtube_job(job_id, url, mode, quality):
     """Download YouTube via yt-dlp.
@@ -949,6 +952,7 @@ def youtube_stream():
 AUDIO_JOBS = {}  # job_id -> {status, progress, filename, error, meta}
 
 def run_audio_extract_job(job_id, in_path, bitrate):
+    cleanup_old_uploads()
     try:
         AUDIO_JOBS[job_id]["status"] = "processing"
         AUDIO_JOBS[job_id]["progress"] = 10
