@@ -42,22 +42,19 @@ def is_request_authenticated():
     header_pin = request.headers.get("X-PIN-Code")
     if header_pin == PIN_CODE:
         return True
+    # Cek token via query param (untuk streaming endpoint yang dibuka via window.open / URL langsung)
+    qs_token = request.args.get("token") or ""
+    if verify_auth_token(qs_token):
+        return True
     return False
 
 @app.before_request
 def check_auth():
-    # Mengizinkan akses login verification endpoint
     if request.path == "/api/verify-pin":
         return None
-    # Cek autentikasi: cookie, header X-Auth-Token, atau query param token
     if not is_request_authenticated():
-        # Khusus endpoint stream: cek juga token di query param
-        qs_token = request.args.get("token") or ""
-        if verify_auth_token(qs_token):
-            return None
         if request.path.startswith("/api/"):
             return jsonify({"error": "Unauthorized: Masukkan PIN terlebih dahulu", "locked": True}), 401
-        # Jika membuka halaman web atau download file saat belum login, tetap layani index.html
 
 
 def read_metadata_summary(file_path):
