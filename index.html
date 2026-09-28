@@ -2228,7 +2228,7 @@
             2160: { name: '4K', sub: 'Ultra HD' }
         };
 
-        function renderResolutionGrid(resolutions, selectedQ, hasEnhanced = false) {
+        function renderResolutionGrid(resolutions, selectedQ, hasEnhanced = false, maxFps = 30) {
             if (!ytQualityGrid) return;
             ytQualityGrid.innerHTML = '';
             if (!resolutions || resolutions.length === 0) {
@@ -2244,15 +2244,30 @@
 
                 const meta = RESOLUTION_META[q] || { name: q + 'p', sub: q + 'p' };
                 let subText = meta.sub;
-                if (q === 1080 && hasEnhanced) {
-                    subText = 'Full HD (Enhanced Bitrate)';
-                } else if (q === maxQ) {
+                if (q === 1080) {
+                    if (hasEnhanced) {
+                        subText = 'Full HD (Enhanced Bitrate)';
+                    } else if (maxFps >= 50) {
+                        subText = `Full HD ${maxFps}fps`;
+                    }
+                } else if (q === 720 && maxFps >= 50) {
+                    subText = `HD ${maxFps}fps`;
+                }
+
+                if (q === maxQ && !subText.includes('(Maks)')) {
                     subText = subText + ' (Maks)';
                 }
 
                 card.innerHTML = `<div class="quality-name">${meta.name}</div><div class="quality-sub">${subText}</div>`;
                 ytQualityGrid.appendChild(card);
             });
+        }
+
+        function showAllResolutions() {
+            renderResolutionGrid(DEFAULT_RESOLUTIONS, ytQuality || 1080, false, 60);
+            if (ytResStatus) {
+                ytResStatus.innerHTML = '<span style="color: #34d399;">Semua resolusi dibuka (144p - 4K) • Silakan pilih</span>';
+            }
         }
 
         async function inspectYoutubeUrl(immediate = false) {
@@ -2302,15 +2317,22 @@
                     if (ytInfoTitle) ytInfoTitle.innerText = data.title || 'Video YouTube';
                     if (ytInfoChannel) ytInfoChannel.innerText = data.uploader || '';
                     const maxH = data.max_resolution || 1080;
+                    const maxFps = data.max_fps || 30;
+                    const fpsLabel = (maxFps >= 50) ? ` ${maxFps}fps` : '';
                     const enhLabel = data.has_1080_enhanced ? ' (Enhanced Bitrate)' : '';
-                    if (ytInfoMaxRes) ytInfoMaxRes.innerText = `Maks ${maxH}p` + (maxH >= 720 ? ' HD' : '') + enhLabel;
+                    if (ytInfoMaxRes) {
+                        ytInfoMaxRes.innerText = `Maks ${maxH}p` + (maxH >= 720 ? ' HD' : '') + fpsLabel + enhLabel;
+                    }
 
                     const resolutions = (data.resolutions && data.resolutions.length > 0) ? data.resolutions : DEFAULT_RESOLUTIONS;
-                    if (ytResStatus) ytResStatus.innerText = `Terdeteksi ${resolutions.length} resolusi asli` + enhLabel;
+                    if (ytResStatus) {
+                        ytResStatus.innerHTML = `Terdeteksi ${resolutions.length} resolusi asli` + enhLabel + 
+                            ` • <a href="javascript:void(0)" onclick="showAllResolutions()" style="color: #818cf8; text-decoration: underline; font-weight: 500;">Tampilkan semua pilihan</a>`;
+                    }
 
                     const autoChoice = resolutions.includes(1080) ? 1080 : Math.max(...resolutions);
                     ytQuality = autoChoice;
-                    renderResolutionGrid(resolutions, autoChoice, data.has_1080_enhanced);
+                    renderResolutionGrid(resolutions, autoChoice, data.has_1080_enhanced, maxFps);
                 } else {
                     if (ytResStatus) ytResStatus.innerHTML = '<span style="color: #fbbf24;">Deteksi otomatis tidak merespons — Anda tetap bisa memilih 1080p / 720p manual di bawah.</span>';
                     renderResolutionGrid(DEFAULT_RESOLUTIONS, ytQuality || 1080);

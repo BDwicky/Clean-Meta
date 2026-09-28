@@ -501,7 +501,6 @@ def run_youtube_job(job_id, url, mode, quality):
                 "--no-playlist",
                 "--no-warnings",
                 "--no-check-certificates",
-                "--extractor-args", "youtube:player_client=android,web",
                 "--newline",
                 "--progress",
                 "--restrict-filenames",
@@ -616,7 +615,6 @@ def youtube_info():
             "--no-playlist",
             "--no-warnings",
             "--no-check-certificates",
-            "--extractor-args", "youtube:player_client=android,web",
             url
         ]
 
@@ -626,12 +624,26 @@ def youtube_info():
             return jsonify({"error": err[:300]}), 400
 
         raw_stdout = proc.stdout.strip()
-        first_line = raw_stdout.splitlines()[0] if raw_stdout else "{}"
-        info = json.loads(first_line)
+        info = {}
+        for line in raw_stdout.splitlines():
+            line = line.strip()
+            if line.startswith("{") and line.endswith("}"):
+                try:
+                    info = json.loads(line)
+                    break
+                except Exception:
+                    pass
+        if not info and raw_stdout:
+            try:
+                info = json.loads(raw_stdout)
+            except Exception:
+                pass
+
         formats = info.get("formats", [])
 
         heights = set()
         widths = set()
+        max_fps = 30
         has_1080_enhanced = False
 
         for f in formats:
@@ -641,10 +653,38 @@ def youtube_info():
 
             h = f.get("height")
             w = f.get("width")
-            note = str(f.get("format_note") or "").lower()
+            fps = f.get("fps") or 0
+            if fps and fps > max_fps:
+                try:
+                    max_fps = int(fps)
+                except Exception:
+                    pass
 
-            if "premium" in note or "enhanced" in note:
+            note = str(f.get("format_note") or "").lower()
+            qlabel = str(f.get("quality_label") or "").lower()
+
+            if "premium" in note or "enhanced" in note or "premium" in qlabel:
                 has_1080_enhanced = True
+
+            for text in (note, qlabel):
+                if not text:
+                    continue
+                if "2160" in text or "4k" in text:
+                    heights.add(2160)
+                elif "1440" in text or "2k" in text:
+                    heights.add(1440)
+                elif "1080" in text:
+                    heights.add(1080)
+                elif "720" in text:
+                    heights.add(720)
+                elif "480" in text:
+                    heights.add(480)
+                elif "360" in text:
+                    heights.add(360)
+                elif "240" in text:
+                    heights.add(240)
+                elif "144" in text:
+                    heights.add(144)
 
             if h:
                 try:
@@ -677,12 +717,14 @@ def youtube_info():
             detected_resolutions.append(720)
         if any(460 <= h < 700 for h in heights) or any(800 <= w < 1200 for w in widths):
             detected_resolutions.append(480)
-        if any(h < 460 for h in heights if h >= 300) or any(600 <= w < 800 for w in widths):
+        if any(300 <= h < 460 for h in heights) or any(500 <= w < 800 for w in widths):
             detected_resolutions.append(360)
+        if any(h < 300 for h in heights if h > 0):
+            detected_resolutions.append(240)
 
         detected_resolutions = sorted(list(set(detected_resolutions)))
         if not detected_resolutions:
-            detected_resolutions = [720, 1080]
+            detected_resolutions = [360, 480, 720, 1080]
 
         max_h = max(detected_resolutions)
         duration_sec = info.get("duration") or 0
@@ -701,6 +743,7 @@ def youtube_info():
             "duration": duration_sec,
             "duration_str": duration_str,
             "max_resolution": max_h,
+            "max_fps": max_fps,
             "has_1080_enhanced": has_1080_enhanced,
             "resolutions": detected_resolutions
         })
