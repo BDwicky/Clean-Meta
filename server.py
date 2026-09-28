@@ -477,11 +477,27 @@ def is_valid_youtube_url(url):
 
 YT_JOBS = {}  # job_id -> {status, progress, filename, title, error}
 
+def cleanup_old_uploads():
+    """Hapus file unduhan/unggahan lama (> 2 jam) agar storage server tetap lega."""
+    try:
+        now = datetime.datetime.now().timestamp()
+        for fname in os.listdir(UPLOAD_DIR):
+            fpath = os.path.join(UPLOAD_DIR, fname)
+            if os.path.isfile(fpath):
+                if now - os.path.getmtime(fpath) > 7200:
+                    try:
+                        os.remove(fpath)
+                    except Exception:
+                        pass
+    except Exception:
+        pass
+
 def run_youtube_job(job_id, url, mode, quality):
     """Download YouTube via yt-dlp.
     mode: 'video' -> MP4 up to target quality (VP9/AV1/H264 merged into MP4)
           'audio' -> M4A highest audio quality
     """
+    cleanup_old_uploads()
     ytdlp_bin = get_ytdlp_bin()
     out_template = os.path.join(UPLOAD_DIR, f"yt_{job_id}.%(ext)s")
 
@@ -503,7 +519,12 @@ def run_youtube_job(job_id, url, mode, quality):
                 url,
             ]
         else:
-            fmt = f"bestvideo[height<={quality}]+bestaudio[ext=m4a]/bestvideo[height<={quality}]+bestaudio/best[height<={quality}]/best"
+            fmt = (
+                f"bestvideo[ext=mp4][height<={quality}]+bestaudio[ext=m4a]/"
+                f"bestvideo[height<={quality}]+bestaudio[ext=m4a]/"
+                f"bestvideo[height<={quality}]+bestaudio/"
+                f"best[height<={quality}]/best"
+            )
             full_cmd = [
                 ytdlp_bin,
                 "--no-playlist",
@@ -514,6 +535,7 @@ def run_youtube_job(job_id, url, mode, quality):
                 "--restrict-filenames",
                 "-f", fmt,
                 "--merge-output-format", "mp4",
+                "--postprocessor-args", "ffmpeg:-movflags +faststart",
                 "-o", out_template,
                 url,
             ]

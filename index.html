@@ -2409,7 +2409,6 @@
             ytAfterBox.style.display = 'none';
             ytDl.style.display = 'none';
 
-            // === DIRECT STREAM — IDM & Browser 1-Click ===
             let token = localStorage.getItem('clean_auth_token') || '';
             if (!token) {
                 try {
@@ -2424,37 +2423,121 @@
                 } catch (e) {}
             }
 
-            const encodedUrl = encodeURIComponent(url);
-            const quality = ytQuality || 720;
-            const mode = ytMode || 'video';
-            const ext = (mode === 'audio') ? 'm4a' : 'mp4';
-            const streamUrl = `/api/youtube-stream?url=${encodedUrl}&mode=${mode}&quality=${quality}&token=${encodeURIComponent(token)}`;
+            try {
+                const res = await fetch('/api/youtube-download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Auth-Token': token
+                    },
+                    body: JSON.stringify({ url: url, mode: ytMode, quality: ytQuality || 720 })
+                });
 
-            // Trigger unduhan via hidden iframe:
-            // 1. Tidak membuka tab baru kosong di browser
-            // 2. IDM extension secara otomatis mendeteksi response attachment/video dan memunculkan popup IDM
-            // 3. Jika IDM tidak terpasang, browser langsung mengunduh via download bar bawaan
-            let dlFrame = document.getElementById('yt-stream-frame');
-            if (!dlFrame) {
-                dlFrame = document.createElement('iframe');
-                dlFrame.id = 'yt-stream-frame';
-                dlFrame.style.display = 'none';
-                document.body.appendChild(dlFrame);
+                if (res.status === 401) {
+                    ytStatus.style.color = '#ef4444';
+                    ytStatus.innerText = 'Sesi PIN telah kedaluwarsa. Silakan masukkan PIN kembali.';
+                    ytProgressWrap.style.display = 'none';
+                    ytBtn.disabled = false;
+                    lockSession();
+                    return;
+                }
+
+                const data = await res.json();
+                if (!data.success) {
+                    ytStatus.style.color = '#ef4444';
+                    ytStatus.innerText = 'Gagal: ' + (data.error || 'Terjadi kesalahan sistem');
+                    ytProgressWrap.style.display = 'none';
+                    ytBtn.disabled = false;
+                    return;
+                }
+
+                const jobId = data.job_id;
+                let pollFailCount = 0;
+
+                ytPollTimer = setInterval(async () => {
+                    try {
+                        const sres = await fetch(`/api/youtube-status/${jobId}?token=${encodeURIComponent(token)}`, {
+                            headers: { 'X-Auth-Token': token }
+                        });
+                        if (sres.status === 401) {
+                            clearInterval(ytPollTimer);
+                            ytPollTimer = null;
+                            lockSession();
+                            return;
+                        }
+                        const sdata = await sres.json();
+                        pollFailCount = 0;
+
+                        if (sdata.status === 'downloading' || sdata.status === 'processing') {
+                            const p = sdata.progress || 0;
+                            ytProgressBar.style.width = p + '%';
+                            ytProgressBar.innerText = p + '%';
+                            ytStatus.innerText = sdata.meta_text || (sdata.status === 'processing' ? 'Menggabungkan stream MP4 murni...' : 'Mengunduh stream YouTube...');
+                        } else if (sdata.status === 'done') {
+                            clearInterval(ytPollTimer);
+                            ytPollTimer = null;
+                            ytProgressBar.style.width = '100%';
+                            ytProgressBar.innerText = '100%';
+                            ytProgressWrap.style.display = 'none';
+                            ytStatus.style.color = 'var(--color-success)';
+                            ytStatus.innerText = '✓ Selesai! Mengirim ke IDM / Browser...';
+
+                            const dlUrl = `${sdata.download_url}?token=${encodeURIComponent(token)}`;
+
+                            // === 1X KLIK OTOMATIS: AUTO-TRIGGER KE IDM / BROWSER ===
+                            let dlFrame = document.getElementById('yt-stream-frame');
+                            if (!dlFrame) {
+                                dlFrame = document.createElement('iframe');
+                                dlFrame.id = 'yt-stream-frame';
+                                dlFrame.style.display = 'none';
+                                document.body.appendChild(dlFrame);
+                            }
+                            dlFrame.src = dlUrl;
+
+                            // Tombol manual unduhan sebagai fallback
+                            ytDl.href = dlUrl;
+                            ytDl.innerText = '⬇ Unduh Berkas (' + (sdata.filename || 'video.mp4') + ')';
+                            ytDl.style.display = 'flex';
+
+                            // Tampilkan video player preview
+                            const isAudio = (sdata.filename || '').endsWith('.m4a') || (sdata.filename || '').endsWith('.mp3');
+                            if (isAudio) {
+                                ytAudioPreview.src = dlUrl;
+                                ytAudioPreview.style.display = 'block';
+                                ytVidPreview.style.display = 'none';
+                            } else {
+                                ytVidPreview.src = dlUrl;
+                                ytVidPreview.style.display = 'block';
+                                ytAudioPreview.style.display = 'none';
+                            }
+                            ytAfterBox.style.display = 'block';
+                            ytBtn.disabled = false;
+                        } else if (sdata.status === 'error') {
+                            clearInterval(ytPollTimer);
+                            ytPollTimer = null;
+                            ytProgressWrap.style.display = 'none';
+                            ytStatus.style.color = '#ef4444';
+                            ytStatus.innerText = 'Gagal: ' + (sdata.error || 'kesalahan unduhan');
+                            ytBtn.disabled = false;
+                        }
+                    } catch (err) {
+                        pollFailCount++;
+                        if (pollFailCount > 8) {
+                            clearInterval(ytPollTimer);
+                            ytPollTimer = null;
+                            ytStatus.style.color = '#ef4444';
+                            ytStatus.innerText = 'Pemantauan terputus. Berkas mungkin masih diproses di server.';
+                            ytBtn.disabled = false;
+                        }
+                    }
+                }, 800);
+
+            } catch (err) {
+                ytStatus.style.color = '#ef4444';
+                ytStatus.innerText = 'Terjadi kesalahan saat memulai unduhan.';
+                ytProgressWrap.style.display = 'none';
+                ytBtn.disabled = false;
             }
-            dlFrame.src = streamUrl;
-
-            // Tampilkan status dan tombol download langsung
-            ytProgressWrap.style.display = 'none';
-            ytStatus.style.color = 'var(--color-success)';
-            ytStatus.innerHTML = '⬇ Mengirim stream ke IDM / Browser... <small style="color:var(--text-muted)">Jika IDM terpasang klik Start Download.</small>';
-            ytDl.href = streamUrl;
-            ytDl.setAttribute('download', `video_${quality}p_youtube.${ext}`);
-            ytDl.removeAttribute('target');
-            ytDl.innerText = `⬇ Klik di sini jika unduhan belum muncul`;
-            ytDl.style.display = 'flex';
-            ytBtn.disabled = false;
-
-            return; // Selesai
         }
 
 
