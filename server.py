@@ -10,6 +10,7 @@ import hashlib
 import hmac
 
 from flask import Flask, request, jsonify, send_from_directory, make_response, Response, stream_with_context
+import db
 
 app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -18,12 +19,23 @@ UPLOAD_DIR = "/var/www/clean-ai/uploads" if os.path.exists("/var/www/clean-ai/up
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def cleanup_old_uploads():
-    """Hapus file unduhan/unggahan lama (> 12 jam) agar storage server tetap terjaga sinkron dengan riwayat sesi."""
+    """
+    Hapus file unduhan/unggahan lama (> 12 jam) yang tidak diproteksi oleh Mode Admin.
+    Jika Admin mengaktifkan 'Tidak Hangus' (Global Freeze), pembersihan dilewati sepenuhnya.
+    """
     try:
+        if db.is_global_freeze():
+            return  # Mode Tidak Hangus Aktif: Semua file dipertahankan permanen
+            
+        protected_files = db.get_protected_filenames()
+        db.purge_expired_records()
+        
         now = datetime.datetime.now().timestamp()
         for fname in os.listdir(UPLOAD_DIR):
             fpath = os.path.join(UPLOAD_DIR, fname)
             if os.path.isfile(fpath):
+                if fname in protected_files:
+                    continue  # Berkas diproteksi permanen oleh admin
                 # Retensi 12 Jam = 43,200 detik
                 if now - os.path.getmtime(fpath) > 43200:
                     try:
@@ -33,44 +45,65 @@ def cleanup_old_uploads():
     except Exception:
         pass
 
-PIN_CODE = "123123"
+PIN_CODE = os.environ.get("ADMIN_PIN", "123123")
 SECRET_KEY = "clean-ai-secret-pin-salt-" + hashlib.sha256(PIN_CODE.encode()).hexdigest()[:16]
 
 JOBS = {}  # job_id -> {status, progress, filename, report, error, meta}
 
-def create_auth_token():
-    sig = hmac.new(SECRET_KEY.encode(), b"authenticated_clean_ai", hashlib.sha256).hexdigest()
-    return f"auth_{sig}"
+def get_request_client_id():
+    """Mengambil Client ID unik per perangkat dari header X-Client-ID atau cookie clean_client_id"""
+    cid = request.headers.get("X-Client-ID") or request.cookies.get("clean_client_id")
+    if not cid or not isinstance(cid, str) or len(cid) > 64:
+        cid = f"c_{int(datetime.datetime.now().timestamp())}_{uuid.uuid4().hex[:6]}"
+    return cid
 
-def verify_auth_token(token):
-    if not token or not token.startswith("auth_"):
+def create_admin_token():
+    sig = hmac.new(SECRET_KEY.encode(), b"admin_clean_ai_master", hashlib.sha256).hexdigest()
+    return f"admin_{sig}"
+
+def verify_admin_token(token):
+    if not token or not token.startswith("admin_"):
         return False
-    expected = create_auth_token()
+    expected = create_admin_token()
     return hmac.compare_digest(token, expected)
 
-def is_request_authenticated():
-    cookie_token = request.cookies.get("clean_auth")
-    if verify_auth_token(cookie_token):
+# Alias untuk backward compatibility
+def create_auth_token():
+    return create_admin_token()
+
+def verify_auth_token(token):
+    return verify_admin_token(token)
+
+def is_admin_authenticated():
+    """Cek apakah request terautentikasi sebagai Admin"""
+    cookie_token = request.cookies.get("clean_admin_auth") or request.cookies.get("clean_auth")
+    if verify_admin_token(cookie_token):
         return True
-    auth_header = request.headers.get("X-Auth-Token")
-    if verify_auth_token(auth_header):
+    auth_header = request.headers.get("X-Admin-Token") or request.headers.get("X-Auth-Token")
+    if verify_admin_token(auth_header):
         return True
     header_pin = request.headers.get("X-PIN-Code")
     if header_pin == PIN_CODE:
         return True
-    # Cek token via query param (untuk streaming endpoint yang dibuka via window.open / URL langsung)
-    qs_token = request.args.get("token") or ""
-    if verify_auth_token(qs_token):
+    qs_token = request.args.get("admin_token") or request.args.get("token") or ""
+    if verify_admin_token(qs_token):
         return True
     return False
 
+def is_request_authenticated():
+    return is_admin_authenticated()
+
 @app.before_request
 def check_auth():
-    if request.path in ("/api/verify-pin", "/api/auth-status"):
-        return None
-    if not is_request_authenticated():
-        if request.path.startswith("/api/"):
-            return jsonify({"error": "Unauthorized: Masukkan PIN terlebih dahulu", "locked": True}), 401
+    """
+    Public Mode: Semua fitur sanitasi, youtube, ekstrak audio, dan unduhan terbuka bebas bagi publik.
+    Hanya endpoint admin yang diproteksi.
+    """
+    if request.path.startswith("/api/admin/"):
+        if request.path in ("/api/admin/login", "/api/admin/status"):
+            return None
+        if not is_admin_authenticated():
+            return jsonify({"error": "Unauthorized: Mode Admin diperlukan", "admin_required": True}), 401
 
 
 def read_metadata_summary(file_path):
@@ -407,14 +440,28 @@ def favicon():
     return send_from_directory(STATIC_DIR, "favicon.svg", mimetype="image/svg+xml")
 
 
-@app.route("/api/verify-pin", methods=["POST"])
-def verify_pin():
+@app.route("/api/admin/login", methods=["POST"])
+@app.route("/api/verify-pin", methods=["POST"])  # Alias untuk kompatibilitas
+def admin_login():
     data = request.get_json(silent=True) or {}
     pin = (data.get("pin") or "").strip()
     if pin == PIN_CODE:
-        token = create_auth_token()
-        resp = make_response(jsonify({"success": True, "token": token}))
+        token = create_admin_token()
+        resp = make_response(jsonify({
+            "success": True, 
+            "token": token, 
+            "isAdmin": True,
+            "globalFreeze": db.is_global_freeze()
+        }))
         is_https = request.is_secure or request.headers.get("X-Forwarded-Proto") == "https"
+        resp.set_cookie(
+            "clean_admin_auth",
+            token,
+            max_age=30*86400,
+            httponly=True,
+            samesite="Lax",
+            secure=is_https
+        )
         resp.set_cookie(
             "clean_auth",
             token,
@@ -424,21 +471,119 @@ def verify_pin():
             secure=is_https
         )
         return resp
-    return jsonify({"success": False, "error": "PIN salah"}), 403
+    return jsonify({"success": False, "error": "PIN Admin salah"}), 403
 
 
-@app.route("/api/auth-status", methods=["GET"])
-def auth_status():
-    if is_request_authenticated():
-        token = create_auth_token()
-        return jsonify({"authenticated": True, "token": token})
-    return jsonify({"authenticated": False, "error": "Unauthorized"}), 401
+@app.route("/api/admin/logout", methods=["POST"])
+def admin_logout():
+    resp = make_response(jsonify({"success": True}))
+    resp.set_cookie("clean_admin_auth", "", expires=0)
+    resp.set_cookie("clean_auth", "", expires=0)
+    return resp
+
+
+@app.route("/api/admin/status", methods=["GET"])
+@app.route("/api/auth-status", methods=["GET"])  # Alias
+def admin_status():
+    is_adm = is_admin_authenticated()
+    return jsonify({
+        "authenticated": is_adm,
+        "isAdmin": is_adm,
+        "token": create_admin_token() if is_adm else None,
+        "globalFreeze": db.is_global_freeze()
+    })
+
+
+@app.route("/api/admin/toggle-freeze", methods=["POST"])
+def admin_toggle_freeze():
+    if not is_admin_authenticated():
+        return jsonify({"error": "Unauthorized: Mode Admin diperlukan"}), 401
+    data = request.get_json(silent=True) or {}
+    freeze = bool(data.get("freeze"))
+    db.set_global_freeze(freeze)
+    return jsonify({"success": True, "globalFreeze": db.is_global_freeze()})
+
+
+@app.route("/api/admin/toggle-item-retention", methods=["POST"])
+def admin_toggle_item():
+    if not is_admin_authenticated():
+        return jsonify({"error": "Unauthorized: Mode Admin diperlukan"}), 401
+    data = request.get_json(silent=True) or {}
+    item_id = data.get("id")
+    is_perm = bool(data.get("isPermanent"))
+    ok = db.set_item_permanent(item_id, is_perm)
+    return jsonify({"success": ok, "isPermanent": is_perm})
+
+
+@app.route("/api/history", methods=["GET", "POST", "DELETE"])
+def handle_history():
+    client_id = get_request_client_id()
+    is_adm = is_admin_authenticated()
+
+    if request.method == "GET":
+        scope = request.args.get("scope", "client")
+        if scope == "all" and is_adm:
+            items = db.get_history_list(client_id=None, is_admin=True)
+        else:
+            items = db.get_history_list(client_id=client_id, is_admin=False)
+        resp = make_response(jsonify({
+            "success": True,
+            "clientId": client_id,
+            "isAdmin": is_adm,
+            "globalFreeze": db.is_global_freeze(),
+            "items": items
+        }))
+        if not request.cookies.get("clean_client_id"):
+            resp.set_cookie("clean_client_id", client_id, max_age=365*86400, samesite="Lax")
+        return resp
+
+    elif request.method == "POST":
+        data = request.get_json(silent=True) or {}
+        title = data.get("title") or "Berkas Bersih"
+        mtype = data.get("type") or "photo"
+        tlabel = data.get("typeLabel") or "Berkas"
+        sizestr = data.get("sizeStr") or ""
+        metainfo = data.get("metaInfo") or ""
+        dl_url = data.get("downloadUrl") or ""
+        fname = data.get("filename") or ""
+        item_id = data.get("id")
+
+        record = db.add_history_item(
+            client_id=client_id,
+            title=title,
+            media_type=mtype,
+            type_label=tlabel,
+            size_str=sizestr,
+            meta_info=metainfo,
+            download_url=dl_url,
+            filename=fname,
+            item_id=item_id
+        )
+        resp = make_response(jsonify({"success": True, "item": record}))
+        if not request.cookies.get("clean_client_id"):
+            resp.set_cookie("clean_client_id", client_id, max_age=365*86400, samesite="Lax")
+        return resp
+
+    elif request.method == "DELETE":
+        scope = request.args.get("scope", "client")
+        if scope == "all" and is_adm:
+            db.clear_history_list(is_admin=True)
+        else:
+            db.clear_history_list(client_id=client_id, is_admin=False)
+        return jsonify({"success": True})
+
+
+@app.route("/api/history/<item_id>", methods=["DELETE"])
+def delete_history_single(item_id):
+    client_id = get_request_client_id()
+    is_adm = is_admin_authenticated()
+    ok = db.delete_history_item(item_id, client_id=client_id, is_admin=is_adm)
+    return jsonify({"success": ok})
 
 
 @app.route("/uploads/<path:filename>")
 def get_upload(filename):
-    if not is_request_authenticated():
-        return jsonify({"error": "Unauthorized"}), 401
+    # Akses unduhan publik untuk berkas yang telah diproses
     return send_from_directory(UPLOAD_DIR, filename, as_attachment=True)
 
 
@@ -968,12 +1113,7 @@ def youtube_stream():
     Tidak ada file yang disimpan di disk. Browser / IDM menerima byte secara real-time.
     Dipanggil via GET dengan query params: url, mode, quality, token.
     """
-    # Auth via query param token (karena ini dibuka via <a href> atau window.location)
-    token = request.args.get("token") or request.headers.get("X-Auth-Token") or ""
-    cookie_token = request.cookies.get("clean_auth")
-    if not (verify_auth_token(token) or verify_auth_token(cookie_token)):
-        return Response("Unauthorized: Masukkan PIN terlebih dahulu", status=401)
-
+    # Streaming terbuka untuk publik
     raw_url = (request.args.get("url") or "").strip()
     url = clean_youtube_url(raw_url)
     mode = (request.args.get("mode") or "video").strip().lower()

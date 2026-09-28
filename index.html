@@ -1452,30 +1452,160 @@
                 justify-content: center;
             }
         }
+
+        /* Mode Admin & Scope Controls */
+        .admin-active-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            color: #fbbf24;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .admin-pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #f59e0b;
+            box-shadow: 0 0 8px #f59e0b;
+            animation: pulse-dot 1.8s infinite ease-in-out;
+        }
+        .btn-admin-logout {
+            background: transparent;
+            border: none;
+            color: #fbbf24;
+            cursor: pointer;
+            padding: 2px 4px;
+            display: inline-flex;
+            align-items: center;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        .btn-admin-logout:hover {
+            opacity: 1;
+            color: #ef4444;
+        }
+        .scope-toggle-group {
+            display: inline-flex;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-sm);
+            padding: 2px;
+            gap: 2px;
+        }
+        .btn-scope {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-scope.active {
+            background: var(--surface-card);
+            color: var(--text-primary);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        }
+        .btn-freeze-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            color: #fbbf24;
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-freeze-toggle:hover {
+            background: rgba(245, 158, 11, 0.22);
+            border-color: #fbbf24;
+        }
+        .btn-freeze-toggle.active {
+            background: rgba(16, 185, 129, 0.18);
+            border-color: #10b981;
+            color: #10b981;
+        }
+        .btn-history-perm {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-medium);
+            color: var(--text-muted);
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .btn-history-perm.is-perm {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: rgba(245, 158, 11, 0.5);
+            color: #fbbf24;
+        }
+        .btn-history-perm:hover {
+            border-color: #fbbf24;
+            color: #fbbf24;
+        }
+        .perm-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        .client-badge {
+            font-family: monospace;
+            font-size: 10px;
+            background: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+            padding: 1px 5px;
+            border-radius: 4px;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+        }
     </style>
 </head>
 <body>
-    <!-- ================= PIN AUTHENTICATION GATE ================= -->
-    <div id="pinModal" class="pin-modal-overlay">
-        <div class="pin-modal-card" id="pinCard">
-            <div class="pin-lock-icon">
+    <!-- ================= ADMIN AUTHENTICATION MODAL ================= -->
+    <div id="adminModal" class="pin-modal-overlay" style="display: none;">
+        <div class="pin-modal-card" id="adminCard" style="position: relative;">
+            <button onclick="closeAdminModal()" style="position: absolute; top: 14px; right: 14px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 4px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div class="pin-lock-icon" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3);">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
             </div>
-            <h3 class="pin-modal-title">Autentikasi Workstation</h3>
-            <p class="pin-modal-subtitle">Masukkan kode PIN keamanan untuk membuka akses instrumen Clean-Meta</p>
-            <form id="pinForm" onsubmit="handlePinSubmit(event)">
-                <input type="password" id="pinInput" class="pin-input" maxlength="10" placeholder="••••••" autofocus autocomplete="off">
-                <button type="submit" class="btn-primary" style="padding: 12px;">Buka Akses</button>
-                <div id="pinError" class="pin-error">PIN salah, silakan coba kembali.</div>
+            <h3 class="pin-modal-title">Mode Admin Clean-Meta</h3>
+            <p class="pin-modal-subtitle">Masukkan kode PIN Admin untuk membuka pemantauan riwayat semua klien & kontrol retensi berkas tidak hangus.</p>
+            <form id="adminForm" onsubmit="handleAdminSubmit(event)">
+                <input type="password" id="adminPinInput" class="pin-input" maxlength="12" placeholder="PIN Admin" autocomplete="off">
+                <button type="submit" class="btn-primary" style="padding: 12px; background: linear-gradient(135deg, #d97706, #b45309);">Masuk Mode Admin</button>
+                <div id="adminPinError" class="pin-error">PIN Admin salah, silakan coba kembali.</div>
             </form>
         </div>
     </div>
 
     <!-- ================= MAIN APPLICATION ================= -->
-    <div id="appCard" style="display: none; display: flex; flex-direction: column; min-height: 100vh;">
+    <div id="appCard" style="display: flex; flex-direction: column; min-height: 100vh;">
         <!-- Top Navigation Bar -->
         <header class="app-header">
             <div class="header-inner">
@@ -1516,10 +1646,17 @@
                         <div class="pulse-dot"></div>
                         <span>Lossless Engine Siap</span>
                     </div>
-                    <button class="btn-icon-soft" title="Kunci Sesi" onclick="lockSession()">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                        Kunci
+                    <button class="btn-icon-soft" id="btnAdminGate" onclick="openAdminModal()" title="Masuk Mode Admin">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        Mode Admin
                     </button>
+                    <div class="admin-active-pill" id="adminBadgePill" style="display: none;">
+                        <span class="admin-pulse-dot"></span>
+                        <span>ADMIN</span>
+                        <button class="btn-admin-logout" onclick="logoutAdmin()" title="Keluar Mode Admin">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </header>
@@ -1987,9 +2124,9 @@
                         <div>
                             <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                Riwayat Pemrosesan Sesi
+                                <span id="historyHeaderTitle">Riwayat Pemrosesan Sesi</span>
                             </h2>
-                            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+                            <p id="historySubtitle" style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
                                 Berkas otomatis tersimpan selama <strong>12 jam</strong> sejak diproses sebelum dibersihkan dari server & browser.
                             </p>
                         </div>
@@ -1998,6 +2135,32 @@
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                 Hapus Semua
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Admin Control Bar (Hanya tampil saat Mode Admin Aktif) -->
+                    <div id="adminHistoryBar" style="display: none; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <span style="font-size: 12px; font-weight: 700; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                    Cakupan:
+                                </span>
+                                <div class="scope-toggle-group">
+                                    <button class="btn-scope active" id="btnScopeClient" onclick="switchHistoryScope('client')">Riwayat Anda</button>
+                                    <button class="btn-scope" id="btnScopeAll" onclick="switchHistoryScope('all')">👑 Seluruh Klien (Mode Admin)</button>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <div id="retentionStatusLabel" style="font-size: 12px; color: var(--text-muted);">
+                                    Retensi Server: <strong id="retentionModeText" style="color: #10b981;">Auto 12 Jam</strong>
+                                </div>
+                                <button class="btn-freeze-toggle" id="btnToggleFreeze" onclick="toggleGlobalFreeze()" title="Cegah penghapusan otomatis semua file dari seluruh client">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    <span id="freezeBtnText">Aktifkan Tidak Hangus</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -2023,160 +2186,309 @@
 
     <!-- ================= JAVASCRIPT LOGIC ================= -->
     <script>
-        // Security Gate - Server Verified PIN
-        const pinModal = document.getElementById('pinModal');
-        const pinCard = document.getElementById('pinCard');
-        const pinInput = document.getElementById('pinInput');
-        const pinError = document.getElementById('pinError');
-        const appCard = document.getElementById('appCard');
+        // ================= CLIENT & ADMIN STATE MANAGER =================
+        let isAdminLoggedIn = false;
+        let isGlobalFreezeActive = false;
+        let currentHistoryScope = 'client'; // 'client' | 'all'
+        let cachedHistoryList = [];
 
-        async function verifyPinOnServer(pin) {
+        function getOrCreateClientId() {
+            let cid = localStorage.getItem('clean_client_id');
+            if (!cid) {
+                cid = 'c_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 9);
+                try { localStorage.setItem('clean_client_id', cid); } catch (e) {}
+            }
+            document.cookie = `clean_client_id=${cid}; path=/; max-age=31536000; SameSite=Lax`;
+            return cid;
+        }
+
+        function getAuthHeaders() {
+            const headers = {
+                'X-Client-ID': getOrCreateClientId()
+            };
+            const adminToken = localStorage.getItem('clean_admin_token') || localStorage.getItem('clean_auth_token');
+            if (adminToken) {
+                headers['X-Admin-Token'] = adminToken;
+                headers['X-Auth-Token'] = adminToken;
+            }
+            return headers;
+        }
+
+        // Modal Admin Controls
+        const adminModal = document.getElementById('adminModal');
+        const adminCard = document.getElementById('adminCard');
+        const adminPinInput = document.getElementById('adminPinInput');
+        const adminPinError = document.getElementById('adminPinError');
+        const btnAdminGate = document.getElementById('btnAdminGate');
+        const adminBadgePill = document.getElementById('adminBadgePill');
+        const adminHistoryBar = document.getElementById('adminHistoryBar');
+
+        function openAdminModal() {
+            if (adminModal) {
+                adminModal.style.display = 'flex';
+                if (adminPinInput) {
+                    adminPinInput.value = '';
+                    setTimeout(() => adminPinInput.focus(), 100);
+                }
+                if (adminPinError) adminPinError.style.display = 'none';
+            }
+        }
+
+        function closeAdminModal() {
+            if (adminModal) adminModal.style.display = 'none';
+            if (adminPinError) adminPinError.style.display = 'none';
+        }
+
+        async function handleAdminSubmit(e) {
+            e.preventDefault();
+            const pin = (adminPinInput.value || '').trim();
+            if (!pin) return;
             try {
-                const res = await fetch('/api/verify-pin', {
+                const res = await fetch('/api/admin/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-Client-ID': getOrCreateClientId() },
                     body: JSON.stringify({ pin: pin })
                 });
                 const data = await res.json();
                 if (data.success && data.token) {
-                    try { localStorage.setItem('clean_auth_token', data.token); } catch (e) {}
+                    try {
+                        localStorage.setItem('clean_admin_token', data.token);
+                        localStorage.setItem('clean_auth_token', data.token);
+                    } catch (e) {}
+                    isAdminLoggedIn = true;
+                    isGlobalFreezeActive = !!data.globalFreeze;
+                    updateAdminUIState();
+                    closeAdminModal();
+                    // Reload history dengan akses admin
+                    loadHistoryFromServer();
+                } else {
+                    if (adminPinError) {
+                        adminPinError.innerText = data.error || 'PIN Admin salah';
+                        adminPinError.style.display = 'block';
+                    }
+                    if (adminCard) {
+                        adminCard.classList.remove('shake');
+                        void adminCard.offsetWidth;
+                        adminCard.classList.add('shake');
+                    }
+                    adminPinInput.value = '';
+                    adminPinInput.focus();
                 }
-                return data.success;
             } catch (err) {
-                return false;
+                if (adminPinError) {
+                    adminPinError.innerText = 'Koneksi ke server terputus';
+                    adminPinError.style.display = 'block';
+                }
             }
         }
 
-        async function handlePinSubmit(e) {
-            e.preventDefault();
-            const entered = pinInput.value.trim();
-            const ok = await verifyPinOnServer(entered);
-            if (ok) {
-                pinModal.style.display = 'none';
-                appCard.style.display = 'flex';
-                pinError.style.display = 'none';
-                updateHistoryBadge();
-            } else {
-                pinError.style.display = 'block';
-                pinCard.classList.remove('shake');
-                void pinCard.offsetWidth; // trigger reflow
-                pinCard.classList.add('shake');
-                pinInput.value = '';
-                pinInput.focus();
-            }
-        }
-
-        function lockSession() {
-            // Clear session cookie and local token, then show PIN gate
-            document.cookie = "clean_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            try { localStorage.removeItem('clean_auth_token'); } catch (e) {}
-            appCard.style.display = 'none';
-            pinModal.style.display = 'flex';
-            pinInput.value = '';
-            pinError.style.display = 'none';
-            setTimeout(() => { if (pinInput) pinInput.focus(); }, 100);
-        }
-
-        // Check authentication state on page load
-        async function initAuthCheck() {
-            let token = localStorage.getItem('clean_auth_token') || '';
+        async function logoutAdmin() {
             try {
-                const res = await fetch('/api/auth-status', {
-                    headers: token ? { 'X-Auth-Token': token } : {}
-                });
+                await fetch('/api/admin/logout', { method: 'POST', headers: getAuthHeaders() });
+            } catch (e) {}
+            try {
+                localStorage.removeItem('clean_admin_token');
+                localStorage.removeItem('clean_auth_token');
+            } catch (e) {}
+            isAdminLoggedIn = false;
+            currentHistoryScope = 'client';
+            updateAdminUIState();
+            loadHistoryFromServer();
+        }
+
+        function updateAdminUIState() {
+            if (btnAdminGate && adminBadgePill) {
+                if (isAdminLoggedIn) {
+                    btnAdminGate.style.display = 'none';
+                    adminBadgePill.style.display = 'inline-flex';
+                    if (adminHistoryBar) adminHistoryBar.style.display = 'block';
+                } else {
+                    btnAdminGate.style.display = 'inline-flex';
+                    adminBadgePill.style.display = 'none';
+                    if (adminHistoryBar) adminHistoryBar.style.display = 'none';
+                }
+            }
+            updateFreezeUIState();
+        }
+
+        function updateFreezeUIState() {
+            const btnFreeze = document.getElementById('btnToggleFreeze');
+            const freezeText = document.getElementById('freezeBtnText');
+            const retModeText = document.getElementById('retentionModeText');
+            if (btnFreeze && freezeText && retModeText) {
+                if (isGlobalFreezeActive) {
+                    btnFreeze.classList.add('active');
+                    freezeText.innerText = 'Mode Tidak Hangus: Aktif';
+                    retModeText.innerText = 'Permanen (Tidak Hangus)';
+                    retModeText.style.color = '#fbbf24';
+                } else {
+                    btnFreeze.classList.remove('active');
+                    freezeText.innerText = 'Aktifkan Tidak Hangus';
+                    retModeText.innerText = 'Auto 12 Jam';
+                    retModeText.style.color = '#10b981';
+                }
+            }
+        }
+
+        async function checkAdminStatus() {
+            getOrCreateClientId();
+            try {
+                const res = await fetch('/api/admin/status', { headers: getAuthHeaders() });
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.token) {
-                        try { localStorage.setItem('clean_auth_token', data.token); } catch (e) {}
+                    isAdminLoggedIn = !!data.isAdmin;
+                    isGlobalFreezeActive = !!data.globalFreeze;
+                } else {
+                    isAdminLoggedIn = false;
+                }
+            } catch (e) {
+                isAdminLoggedIn = false;
+            }
+            updateAdminUIState();
+            loadHistoryFromServer();
+        }
+
+        // ================= RIWAYAT / SESSION HISTORY ENGINE =================
+        async function loadHistoryFromServer() {
+            try {
+                const scope = (isAdminLoggedIn && currentHistoryScope === 'all') ? 'all' : 'client';
+                const res = await fetch(`/api/history?scope=${scope}`, { headers: getAuthHeaders() });
+                if (res.ok) {
+                    const data = await res.json();
+                    cachedHistoryList = Array.isArray(data.items) ? data.items : [];
+                    if (data.globalFreeze !== undefined) {
+                        isGlobalFreezeActive = !!data.globalFreeze;
+                        updateFreezeUIState();
                     }
-                    pinModal.style.display = 'none';
-                    appCard.style.display = 'flex';
                     updateHistoryBadge();
+                    renderHistoryView();
                     return;
                 }
-                // Jika 401 Unauthorized
-                pinModal.style.display = 'flex';
-                appCard.style.display = 'none';
-                setTimeout(() => { if (pinInput) pinInput.focus(); }, 100);
-            } catch (e) {
-                pinModal.style.display = 'flex';
-                appCard.style.display = 'none';
-            }
-        }
-        initAuthCheck();
-
-        // ================= SESSION HISTORY MANAGER (12 JAM) =================
-        const HISTORY_STORAGE_KEY = 'clean_meta_history_v1';
-        const HISTORY_TTL_MS = 12 * 60 * 60 * 1000; // 12 Jam = 43.200.000 ms
-
-        function getHistory() {
-            try {
-                const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
-                if (!raw) return [];
-                const list = JSON.parse(raw);
-                if (!Array.isArray(list)) return [];
-                const now = Date.now();
-                // Filter out items older than 12 hours
-                const valid = list.filter(item => item && item.expiresAt && item.expiresAt > now);
-                if (valid.length !== list.length) {
-                    try { localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(valid)); } catch (e) {}
-                }
-                return valid.sort((a, b) => b.createdAt - a.createdAt);
-            } catch (e) {
-                return [];
-            }
-        }
-
-        function saveHistory(list) {
-            try {
-                localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(list));
             } catch (e) {}
-            updateHistoryBadge();
+            // Fallback render
+            renderHistoryView();
         }
 
-        function addHistoryItem(item) {
-            const list = getHistory();
-            const now = Date.now();
-            const newItem = {
-                id: 'hist_' + now + '_' + Math.random().toString(36).substring(2, 7),
+        async function addHistoryItem(item) {
+            const payload = {
                 title: item.title || 'Berkas Bersih',
                 type: item.type || 'photo',
                 typeLabel: item.typeLabel || 'Berkas',
                 sizeStr: item.sizeStr || '',
                 metaInfo: item.metaInfo || '',
                 downloadUrl: item.downloadUrl || '',
-                createdAt: now,
-                expiresAt: now + HISTORY_TTL_MS
+                filename: item.filename || ''
             };
-            list.unshift(newItem);
-            if (list.length > 60) list.length = 60;
-            saveHistory(list);
-
-            const secHist = document.getElementById('sectionHistory');
-            if (secHist && secHist.style.display !== 'none') {
-                renderHistoryView();
-            }
+            try {
+                const res = await fetch('/api/history', {
+                    method: 'POST',
+                    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.item) {
+                        cachedHistoryList.unshift(data.item);
+                        updateHistoryBadge();
+                        const secHist = document.getElementById('sectionHistory');
+                        if (secHist && secHist.style.display !== 'none') {
+                            renderHistoryView();
+                        }
+                        return;
+                    }
+                }
+            } catch (e) {}
+            loadHistoryFromServer();
         }
 
-        function deleteHistoryItem(id) {
-            const list = getHistory().filter(item => item.id !== id);
-            saveHistory(list);
+        async function deleteHistoryItem(id) {
+            try {
+                await fetch(`/api/history/${id}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+            } catch (e) {}
+            cachedHistoryList = cachedHistoryList.filter(item => item.id !== id);
+            updateHistoryBadge();
             renderHistoryView();
         }
 
-        function clearAllHistory() {
-            const list = getHistory();
-            if (list.length === 0) return;
-            if (confirm('Hapus semua riwayat pemrosesan sesi ini?')) {
-                saveHistory([]);
+        async function clearAllHistory() {
+            if (cachedHistoryList.length === 0) return;
+            const scopeLabel = (isAdminLoggedIn && currentHistoryScope === 'all') ? 'SEMUA riwayat seluruh klien' : 'riwayat sesi Anda';
+            if (confirm(`Hapus ${scopeLabel}?`)) {
+                try {
+                    const scope = (isAdminLoggedIn && currentHistoryScope === 'all') ? 'all' : 'client';
+                    await fetch(`/api/history?scope=${scope}`, {
+                        method: 'DELETE',
+                        headers: getAuthHeaders()
+                    });
+                } catch (e) {}
+                cachedHistoryList = [];
+                updateHistoryBadge();
                 renderHistoryView();
             }
+        }
+
+        async function toggleItemPermanent(id, currentState) {
+            try {
+                const res = await fetch('/api/admin/toggle-item-retention', {
+                    method: 'POST',
+                    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id, isPermanent: !currentState })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const it = cachedHistoryList.find(x => x.id === id);
+                    if (it) it.isPermanent = !!data.isPermanent;
+                    renderHistoryView();
+                }
+            } catch (e) {}
+        }
+
+        async function toggleGlobalFreeze() {
+            const nextState = !isGlobalFreezeActive;
+            try {
+                const res = await fetch('/api/admin/toggle-freeze', {
+                    method: 'POST',
+                    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ freeze: nextState })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    isGlobalFreezeActive = !!data.globalFreeze;
+                    updateFreezeUIState();
+                    loadHistoryFromServer();
+                }
+            } catch (e) {}
+        }
+
+        function switchHistoryScope(scope) {
+            currentHistoryScope = scope;
+            const btnClient = document.getElementById('btnScopeClient');
+            const btnAll = document.getElementById('btnScopeAll');
+            const title = document.getElementById('historyHeaderTitle');
+            const subtitle = document.getElementById('historySubtitle');
+            if (btnClient && btnAll) {
+                btnClient.classList.toggle('active', scope === 'client');
+                btnAll.classList.toggle('active', scope === 'all');
+            }
+            if (title && subtitle) {
+                if (scope === 'all') {
+                    title.innerText = 'Riwayat Seluruh Klien (Mode Admin)';
+                    subtitle.innerText = 'Menampilkan aktivitas dan berkas seluruh pengunjung publik pada server.';
+                } else {
+                    title.innerText = 'Riwayat Pemrosesan Sesi';
+                    subtitle.innerText = 'Berkas otomatis tersimpan selama 12 jam sejak diproses sebelum dibersihkan dari server & browser.';
+                }
+            }
+            loadHistoryFromServer();
         }
 
         function updateHistoryBadge() {
             const badge = document.getElementById('historyBadge');
             if (!badge) return;
-            const count = getHistory().length;
+            const count = cachedHistoryList.length;
             if (count > 0) {
                 badge.innerText = count;
                 badge.style.display = 'inline-block';
@@ -2205,11 +2517,7 @@
         }
 
         function getDownloadUrlWithToken(rawUrl) {
-            if (!rawUrl) return '#';
-            let token = localStorage.getItem('clean_auth_token') || '';
-            if (!token) return rawUrl;
-            const sep = rawUrl.includes('?') ? '&' : '?';
-            return `${rawUrl}${sep}token=${encodeURIComponent(token)}`;
+            return rawUrl || '#';
         }
 
         function renderHistoryView() {
@@ -2218,7 +2526,7 @@
             const btnClear = document.getElementById('btnClearAllHistory');
             if (!listContainer || !emptyState) return;
 
-            const list = getHistory();
+            const list = cachedHistoryList;
             if (list.length === 0) {
                 listContainer.innerHTML = '';
                 emptyState.style.display = 'block';
@@ -2259,7 +2567,8 @@
 
             list.forEach(item => {
                 const conf = icons[item.type] || icons.photo;
-                const dlUrl = getDownloadUrlWithToken(item.downloadUrl);
+                const dlUrl = item.downloadUrl || '#';
+                const isPerm = !!item.isPermanent || isGlobalFreezeActive;
 
                 const card = document.createElement('div');
                 card.className = 'history-card';
@@ -2272,17 +2581,30 @@
                             <div class="history-title" title="${item.title}">${item.title}</div>
                             <div class="history-meta">
                                 <span class="history-tag" style="background: ${conf.badgeBg}; color: ${conf.badgeColor};">${item.typeLabel}</span>
+                                ${item.clientId && currentHistoryScope === 'all' ? `<span class="client-badge" title="ID Klien: ${item.clientId}">Client: ${item.clientId.substring(0, 8)}</span> •` : ''}
                                 ${item.sizeStr ? `<span>${item.sizeStr}</span> •` : ''}
                                 ${item.metaInfo ? `<span>${item.metaInfo}</span> •` : ''}
                                 <span>${formatTimeAgo(item.createdAt)}</span>
-                                <span style="display: inline-flex; align-items: center; gap: 4px; color: #a1a1aa; font-size: 11px;">
-                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                    Kedaluwarsa ${formatExpiresIn(item.expiresAt)}
-                                </span>
+                                ${isPerm ? `
+                                    <span class="perm-badge" title="Berkas diproteksi permanen oleh admin">
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                        Tidak Hangus
+                                    </span>
+                                ` : `
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; color: #a1a1aa; font-size: 11px;">
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                        Kedaluwarsa ${formatExpiresIn(item.expiresAt)}
+                                    </span>
+                                `}
                             </div>
                         </div>
                     </div>
                     <div class="history-actions">
+                        ${isAdminLoggedIn ? `
+                            <button class="btn-history-perm ${item.isPermanent ? 'is-perm' : ''}" onclick="toggleItemPermanent('${item.id}', ${!!item.isPermanent})" title="${item.isPermanent ? 'Kunci Aktif (Tidak Hangus) - Klik untuk kembali ke 12 jam' : 'Kunci Berkas agar Tidak Hangus'}">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            </button>
+                        ` : ''}
                         <a href="${dlUrl}" class="btn-history-dl" target="_blank" download title="Unduh Berkas">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                             Unduh
@@ -2295,6 +2617,7 @@
                 listContainer.appendChild(card);
             });
         }
+        checkAdminStatus();
 
         // ================= MEDIA CLEANER ENGINE =================
         let mode = 'image';   // 'image' | 'video'
@@ -2648,7 +2971,7 @@
 
             const res = await fetch('/api/clean', {
                 method: 'POST',
-                headers: { 'X-Auth-Token': localStorage.getItem('clean_auth_token') || '' },
+                headers: getAuthHeaders(),
                 body: formData
             });
             const data = await res.json();
@@ -2667,7 +2990,8 @@
                         typeLabel: 'Foto Bersih',
                         sizeStr: file ? (file.size / (1024 * 1024)).toFixed(2) + ' MB' : '',
                         metaInfo: 'EXIF ' + camLabel,
-                        downloadUrl: data.download_url
+                        downloadUrl: data.download_url,
+                        filename: data.filename
                     });
                 } catch (he) {}
             } else {
@@ -2690,7 +3014,7 @@
 
             const res = await fetch('/api/clean-video', {
                 method: 'POST',
-                headers: { 'X-Auth-Token': localStorage.getItem('clean_auth_token') || '' },
+                headers: getAuthHeaders(),
                 body: formData
             });
             const data = await res.json();
@@ -2712,7 +3036,7 @@
 
             pollTimer = setInterval(async () => {
                 try {
-                    const sres = await fetch('/api/video-status/' + data.job_id);
+                    const sres = await fetch('/api/video-status/' + data.job_id, { headers: getAuthHeaders() });
                     const sdata = await sres.json();
                     progressBar.style.width = (sdata.progress || 0) + '%';
                     progressBar.innerText = (sdata.progress || 0) + '%';
@@ -2739,7 +3063,8 @@
                                 typeLabel: 'Video Bersih',
                                 sizeStr: (file ? (file.size / (1024 * 1024)).toFixed(2) + ' MB' : ''),
                                 metaInfo: `${vMetaStr} • ${vCamLabel}`,
-                                downloadUrl: sdata.download_url
+                                downloadUrl: sdata.download_url,
+                                filename: sdata.filename
                             });
                         } catch (he) {}
                     } else if (sdata.status === 'error') {
@@ -2933,15 +3258,10 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Auth-Token': localStorage.getItem('clean_auth_token') || ''
+                        ...getAuthHeaders()
                     },
                     body: JSON.stringify({ url: url })
                 });
-
-                if (res.status === 401) {
-                    lockSession();
-                    return;
-                }
 
                 let data = null;
                 try {
@@ -3010,7 +3330,7 @@
             if (tabHist) tabHist.classList.toggle('active', section === 'history');
 
             if (section === 'history') {
-                renderHistoryView();
+                loadHistoryFromServer();
             } else if (section === 'youtube') {
                 if (!ytUrlInput.value.trim()) {
                     if (ytWaitingState) ytWaitingState.style.display = 'block';
@@ -3070,38 +3390,15 @@
             if (ytResultBox) ytResultBox.style.display = 'none';
             ytDl.style.display = 'none';
 
-            let token = localStorage.getItem('clean_auth_token') || '';
-            if (!token) {
-                try {
-                    const r = await fetch('/api/auth-status');
-                    if (r.ok) {
-                        const d = await r.json();
-                        if (d.token) {
-                            token = d.token;
-                            localStorage.setItem('clean_auth_token', token);
-                        }
-                    }
-                } catch (e) {}
-            }
-
             try {
                 const res = await fetch('/api/youtube-download', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Auth-Token': token
+                        ...getAuthHeaders()
                     },
                     body: JSON.stringify({ url: url, mode: ytMode, quality: ytQuality || 720 })
                 });
-
-                if (res.status === 401) {
-                    ytStatus.style.color = '#ef4444';
-                    ytStatus.innerText = 'Sesi PIN telah kedaluwarsa. Silakan masukkan PIN kembali.';
-                    ytProgressWrap.style.display = 'none';
-                    ytBtn.disabled = false;
-                    lockSession();
-                    return;
-                }
 
                 const data = await res.json();
                 if (!data.success) {
@@ -3117,15 +3414,9 @@
 
                 ytPollTimer = setInterval(async () => {
                     try {
-                        const sres = await fetch(`/api/youtube-status/${jobId}?token=${encodeURIComponent(token)}`, {
-                            headers: { 'X-Auth-Token': token }
+                        const sres = await fetch(`/api/youtube-status/${jobId}`, {
+                            headers: getAuthHeaders()
                         });
-                        if (sres.status === 401) {
-                            clearInterval(ytPollTimer);
-                            ytPollTimer = null;
-                            lockSession();
-                            return;
-                        }
                         const sdata = await sres.json();
                         pollFailCount = 0;
 
@@ -3143,7 +3434,7 @@
                             ytStatus.style.color = 'var(--color-success)';
                             ytStatus.innerText = '✓ Selesai! Mengirim ke IDM / Browser...';
 
-                            const dlUrl = `${sdata.download_url}?token=${encodeURIComponent(token)}`;
+                            const dlUrl = sdata.download_url;
 
                             // === 1X KLIK OTOMATIS: AUTO-TRIGGER KE IDM / BROWSER ===
                             let dlFrame = document.getElementById('yt-stream-frame');
@@ -3174,7 +3465,8 @@
                                     typeLabel: 'YouTube',
                                     sizeStr: (ytMode === 'audio') ? 'Audio MP3' : `${ytQuality}p`,
                                     metaInfo: `${ytQualityMeta}${durText}`,
-                                    downloadUrl: sdata.download_url
+                                    downloadUrl: sdata.download_url,
+                                    filename: sdata.filename
                                 });
                             } catch (he) {}
                         } else if (sdata.status === 'error') {
@@ -3349,17 +3641,9 @@
 
                 const res = await fetch('/api/extract-audio', {
                     method: 'POST',
-                    headers: { 'X-Auth-Token': localStorage.getItem('clean_auth_token') || '' },
+                    headers: getAuthHeaders(),
                     body: formData
                 });
-                if (res.status === 401) {
-                    audioStatus.style.color = '#ef4444';
-                    audioStatus.innerText = 'Sesi PIN telah kedaluwarsa. Silakan masukkan PIN kembali.';
-                    audioProgressWrap.style.display = 'none';
-                    audioBtn.disabled = false;
-                    lockSession();
-                    return;
-                }
                 const data = await res.json();
 
                 if (!data.success) {
@@ -3374,7 +3658,7 @@
                 audioPollTimer = setInterval(async () => {
                     try {
                         const sres = await fetch('/api/extract-audio-status/' + data.job_id, {
-                            headers: { 'X-Auth-Token': localStorage.getItem('clean_auth_token') || '' }
+                            headers: getAuthHeaders()
                         });
                         const sdata = await sres.json();
 
@@ -3407,7 +3691,8 @@
                                     typeLabel: 'MP3 Ekstrak',
                                     sizeStr: (audioFile ? (audioFile.size / (1024 * 1024)).toFixed(1) + ' MB Video Sumber' : ''),
                                     metaInfo: metaStr || 'MP3 Audio High Quality',
-                                    downloadUrl: sdata.download_url
+                                    downloadUrl: sdata.download_url,
+                                    filename: sdata.filename
                                 });
                             } catch (he) {}
                         } else if (sdata.status === 'error') {

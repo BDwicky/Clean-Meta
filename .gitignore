@@ -7,4 +7,6 @@ uploads/*
 *.local
 *.log
 .DS_Store
-Thumbs.db
+thumbs.db
+data/*
+!data/.gitkeep
