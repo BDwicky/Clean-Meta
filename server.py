@@ -401,6 +401,12 @@ def index():
     return send_from_directory(STATIC_DIR, "index.html")
 
 
+@app.route("/favicon.svg")
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory(STATIC_DIR, "favicon.svg", mimetype="image/svg+xml")
+
+
 @app.route("/api/verify-pin", methods=["POST"])
 def verify_pin():
     data = request.get_json(silent=True) or {}
