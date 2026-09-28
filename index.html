@@ -1447,7 +1447,7 @@
                 width: 100%;
                 justify-content: flex-end;
             }
-            .btn-history-dl {
+            .btn-history-dl, .btn-history-preview {
                 flex: 1;
                 justify-content: center;
             }
@@ -1580,6 +1580,92 @@
             border-radius: 4px;
             border: 1px solid rgba(99, 102, 241, 0.25);
         }
+        .btn-history-preview {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 7px 11px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.32);
+            color: #34d399;
+            font-size: 11.5px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-history-preview:hover {
+            background: rgba(16, 185, 129, 0.28);
+            border-color: #34d399;
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+        /* Media Preview Lightbox Modal */
+        .preview-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(7, 9, 15, 0.88);
+            backdrop-filter: blur(12px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+            animation: fadeIn 0.18s ease-out;
+        }
+        .preview-modal-container {
+            background: #0f131d;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            max-width: 880px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(99, 102, 241, 0.2);
+        }
+        .preview-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border-medium);
+        }
+        .preview-modal-body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+            min-height: 250px;
+            background: #080a10;
+        }
+        .preview-modal-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.02);
+            border-top: 1px solid var(--border-medium);
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        @media (max-width: 640px) {
+            .preview-modal-container {
+                max-height: 95vh;
+            }
+            .preview-modal-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1601,6 +1687,34 @@
                 <button type="submit" class="btn-primary" style="padding: 12px; background: linear-gradient(135deg, #d97706, #b45309);">Masuk Mode Admin</button>
                 <div id="adminPinError" class="pin-error">PIN Admin salah, silakan coba kembali.</div>
             </form>
+        </div>
+    </div>
+
+    <!-- ================= MEDIA PREVIEW LIGHTBOX MODAL ================= -->
+    <div id="mediaPreviewModal" class="preview-modal-overlay" onclick="if(event.target === this) closeMediaPreview()">
+        <div class="preview-modal-container">
+            <div class="preview-modal-header">
+                <div style="flex: 1; min-width: 0; margin-right: 12px;">
+                    <div id="previewModalTitle" style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Pratinjau Berkas</div>
+                    <div id="previewModalMeta" style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"></div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <a id="previewModalDownloadBtn" href="#" class="btn-history-dl" target="_blank" download style="padding: 5px 12px; font-size: 11px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Unduh
+                    </a>
+                    <button onclick="closeMediaPreview()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-medium); color: var(--text-muted); width: 28px; height: 28px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Tutup (ESC)">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="preview-modal-body" id="previewModalBody">
+                <!-- Media content inserted dynamically -->
+            </div>
+            <div class="preview-modal-footer" id="previewModalFooterMeta">
+                <span>Dibuat: -</span>
+                <span>Tekan ESC untuk menutup</span>
+            </div>
         </div>
     </div>
 
@@ -2568,17 +2682,18 @@
             list.forEach(item => {
                 const conf = icons[item.type] || icons.photo;
                 const dlUrl = item.downloadUrl || '#';
+                const dlLink = (dlUrl && dlUrl !== '#') ? (dlUrl + (dlUrl.includes('?') ? '&' : '?') + 'dl=1') : '#';
                 const isPerm = !!item.isPermanent || isGlobalFreezeActive;
 
                 const card = document.createElement('div');
                 card.className = 'history-card';
                 card.innerHTML = `
                     <div class="history-card-left">
-                        <div class="history-icon-box ${conf.cls}">
+                        <div class="history-icon-box ${conf.cls}" style="cursor: pointer;" onclick="openMediaPreview('${item.id}')" title="Klik untuk Pratinjau Berkas">
                             ${conf.svg}
                         </div>
                         <div class="history-info">
-                            <div class="history-title" title="${item.title}">${item.title}</div>
+                            <div class="history-title" style="cursor: pointer;" onclick="openMediaPreview('${item.id}')" title="Klik untuk Pratinjau: ${item.title}">${item.title}</div>
                             <div class="history-meta">
                                 <span class="history-tag" style="background: ${conf.badgeBg}; color: ${conf.badgeColor};">${item.typeLabel}</span>
                                 ${item.clientId && currentHistoryScope === 'all' ? `<span class="client-badge" title="ID Klien: ${item.clientId}">Client: ${item.clientId.substring(0, 8)}</span> •` : ''}
@@ -2605,7 +2720,13 @@
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                             </button>
                         ` : ''}
-                        <a href="${dlUrl}" class="btn-history-dl" target="_blank" download title="Unduh Berkas">
+                        ${dlUrl && dlUrl !== '#' ? `
+                            <button class="btn-history-preview" onclick="openMediaPreview('${item.id}')" title="Pratinjau Berkas Tanpa Perlu Mengunduh">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                Preview
+                            </button>
+                        ` : ''}
+                        <a href="${dlLink}" class="btn-history-dl" target="_blank" download title="Unduh Berkas">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                             Unduh
                         </a>
@@ -2617,6 +2738,193 @@
                 listContainer.appendChild(card);
             });
         }
+
+        function openMediaPreview(itemId) {
+            const item = (cachedHistoryList || []).find(x => String(x.id) === String(itemId));
+            if (!item) return;
+
+            const modal = document.getElementById('mediaPreviewModal');
+            const titleEl = document.getElementById('previewModalTitle');
+            const metaEl = document.getElementById('previewModalMeta');
+            const dlBtn = document.getElementById('previewModalDownloadBtn');
+            const bodyEl = document.getElementById('previewModalBody');
+            const footerMeta = document.getElementById('previewModalFooterMeta');
+            if (!modal || !bodyEl) return;
+
+            titleEl.textContent = item.title || item.filename || 'Pratinjau Berkas';
+            titleEl.title = item.title || item.filename || '';
+
+            const rawUrl = item.downloadUrl || '#';
+            const dlLink = (rawUrl && rawUrl !== '#') ? (rawUrl + (rawUrl.includes('?') ? '&' : '?') + 'dl=1') : '#';
+            dlBtn.href = dlLink;
+            dlBtn.setAttribute('download', item.filename || item.title || 'clean_media');
+            if (rawUrl === '#') {
+                dlBtn.style.display = 'none';
+            } else {
+                dlBtn.style.display = 'inline-flex';
+            }
+
+            const icons = {
+                photo: { badgeBg: 'rgba(16, 185, 129, 0.15)', badgeColor: '#10b981' },
+                video: { badgeBg: 'rgba(129, 140, 248, 0.15)', badgeColor: '#818cf8' },
+                youtube: { badgeBg: 'rgba(239, 68, 68, 0.15)', badgeColor: '#ef4444' },
+                audio: { badgeBg: 'rgba(245, 158, 11, 0.15)', badgeColor: '#f59e0b' }
+            };
+            const tagConf = icons[item.type] || icons.photo;
+            const isPerm = !!item.isPermanent || isGlobalFreezeActive;
+
+            let metaHtml = `<span class="history-tag" style="background: ${tagConf.badgeBg}; color: ${tagConf.badgeColor};">${item.typeLabel || item.type}</span>`;
+            if (item.clientId && currentHistoryScope === 'all') {
+                metaHtml += `<span class="client-badge" title="ID Klien: ${item.clientId}">Client: ${item.clientId.substring(0, 8)}</span>`;
+            }
+            if (item.sizeStr) {
+                metaHtml += `<span>•</span><span>${item.sizeStr}</span>`;
+            }
+            if (item.metaInfo) {
+                metaHtml += `<span>•</span><span>${item.metaInfo}</span>`;
+            }
+            if (isPerm) {
+                metaHtml += `<span class="perm-badge" title="Berkas diproteksi permanen">Tidak Hangus</span>`;
+            } else if (item.expiresAt) {
+                metaHtml += `<span>•</span><span style="color:#a1a1aa;">Kedaluwarsa ${formatExpiresIn(item.expiresAt)}</span>`;
+            }
+            metaEl.innerHTML = metaHtml;
+
+            const createdDateStr = item.createdAt ? new Date(item.createdAt).toLocaleString('id-ID') : '-';
+            footerMeta.innerHTML = `
+                <span>Dibuat: ${formatTimeAgo(item.createdAt)} (${createdDateStr})</span>
+                <span style="display: flex; align-items: center; gap: 4px;">
+                    Tekan <kbd style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-family: monospace; border: 1px solid var(--border-medium); font-size: 10px;">ESC</kbd> untuk menutup
+                </span>
+            `;
+
+            // Clear previous media
+            bodyEl.innerHTML = '';
+
+            if (!item.downloadUrl || item.downloadUrl === '#') {
+                bodyEl.innerHTML = `
+                    <div style="color: var(--text-muted); text-align: center; padding: 40px 20px;">
+                        <div style="font-size: 32px; margin-bottom: 8px;">📂</div>
+                        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Berkas Tidak Tersedia</div>
+                        <div style="font-size: 12px;">Tautan berkas kosong atau telah dibersihkan dari server.</div>
+                    </div>
+                `;
+            } else if (item.type === 'photo') {
+                const imgContainer = document.createElement('div');
+                imgContainer.style.cssText = 'width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;';
+                const img = document.createElement('img');
+                img.src = item.downloadUrl;
+                img.alt = item.title || 'Foto';
+                img.style.cssText = 'max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);';
+                img.onerror = function() {
+                    imgContainer.innerHTML = '<div style="color:#ef4444; padding:30px; text-align:center;"><div style="font-size:32px; margin-bottom:8px;">⚠️</div><div>Gagal memuat gambar. Berkas fisik mungkin telah dihapus atau kedaluwarsa.</div></div>';
+                };
+                imgContainer.appendChild(img);
+                if (item.metaInfo) {
+                    const subText = document.createElement('div');
+                    subText.style.cssText = 'font-size: 11px; color: var(--text-muted);';
+                    subText.textContent = item.metaInfo;
+                    imgContainer.appendChild(subText);
+                }
+                bodyEl.appendChild(imgContainer);
+            } else if (item.type === 'video' || item.type === 'youtube') {
+                const videoContainer = document.createElement('div');
+                videoContainer.style.cssText = 'width: 100%; max-width: 820px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;';
+                const vid = document.createElement('video');
+                vid.controls = true;
+                vid.autoplay = true;
+                vid.playsInline = true;
+                vid.style.cssText = 'width: 100%; max-height: 68vh; border-radius: 8px; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.6);';
+                vid.onerror = function() {
+                    videoContainer.innerHTML = '<div style="color:#ef4444; padding:30px; text-align:center;"><div style="font-size:32px; margin-bottom:8px;">⚠️</div><div>Gagal memutar video. Berkas mungkin telah kedaluwarsa atau peramban tidak mendukung codec ini.</div></div>';
+                };
+                const src = document.createElement('source');
+                src.src = item.downloadUrl;
+                src.type = 'video/mp4';
+                vid.appendChild(src);
+                videoContainer.appendChild(vid);
+                if (item.metaInfo) {
+                    const subText = document.createElement('div');
+                    subText.style.cssText = 'font-size: 11px; color: var(--text-muted);';
+                    subText.textContent = item.metaInfo;
+                    videoContainer.appendChild(subText);
+                }
+                bodyEl.appendChild(videoContainer);
+            } else if (item.type === 'audio') {
+                const audioBox = document.createElement('div');
+                audioBox.style.cssText = 'width: 100%; max-width: 500px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-medium); border-radius: 12px; padding: 28px 24px; display: flex; flex-direction: column; align-items: center; gap: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);';
+                
+                const iconCircle = document.createElement('div');
+                iconCircle.style.cssText = 'width: 70px; height: 70px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; color: #f59e0b; box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);';
+                iconCircle.innerHTML = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+                
+                const titleBlock = document.createElement('div');
+                titleBlock.style.cssText = 'text-align: center; width: 100%;';
+                const audioTitle = document.createElement('div');
+                audioTitle.style.cssText = 'font-weight: 700; font-size: 15px; color: var(--text-primary); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+                audioTitle.textContent = item.title;
+                audioTitle.title = item.title;
+                const audioSub = document.createElement('div');
+                audioSub.style.cssText = 'font-size: 12px; color: var(--text-muted);';
+                audioSub.textContent = item.metaInfo || 'MP3 Audio Stream';
+                titleBlock.appendChild(audioTitle);
+                titleBlock.appendChild(audioSub);
+
+                const aud = document.createElement('audio');
+                aud.controls = true;
+                aud.autoplay = true;
+                aud.style.cssText = 'width: 100%;';
+                aud.onerror = function() {
+                    audioBox.innerHTML = '<div style="color:#ef4444; padding:20px; text-align:center;"><div style="font-size:24px; margin-bottom:6px;">⚠️</div><div>Gagal memutar audio. Berkas mungkin telah kedaluwarsa.</div></div>';
+                };
+                const src = document.createElement('source');
+                src.src = item.downloadUrl;
+                src.type = 'audio/mpeg';
+                aud.appendChild(src);
+
+                audioBox.appendChild(iconCircle);
+                audioBox.appendChild(titleBlock);
+                audioBox.appendChild(aud);
+                bodyEl.appendChild(audioBox);
+            } else {
+                bodyEl.innerHTML = `
+                    <div style="text-align: center; padding: 30px 20px;">
+                        <div style="font-size: 32px; margin-bottom: 12px;">📄</div>
+                        <div style="font-weight: 600; margin-bottom: 8px;">${item.title}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Tipe berkas ini tidak dapat dipratinjau secara langsung.</div>
+                        <a href="${dlLink}" download class="btn-history-dl" style="display: inline-flex; padding: 8px 16px;">Unduh Berkas</a>
+                    </div>
+                `;
+            }
+
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMediaPreview() {
+            const modal = document.getElementById('mediaPreviewModal');
+            if (!modal) return;
+            const body = document.getElementById('previewModalBody');
+            if (body) {
+                const videos = body.querySelectorAll('video');
+                videos.forEach(v => { try { v.pause(); v.src = ''; } catch(e){} });
+                const audios = body.querySelectorAll('audio');
+                audios.forEach(a => { try { a.pause(); a.src = ''; } catch(e){} });
+                body.innerHTML = '';
+            }
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' || e.key === 'Esc') {
+                const previewModal = document.getElementById('mediaPreviewModal');
+                if (previewModal && previewModal.style.display === 'flex') {
+                    closeMediaPreview();
+                }
+            }
+        });
+
         checkAdminStatus();
 
         // ================= MEDIA CLEANER ENGINE =================

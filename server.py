@@ -583,8 +583,9 @@ def delete_history_single(item_id):
 
 @app.route("/uploads/<path:filename>")
 def get_upload(filename):
-    # Akses unduhan publik untuk berkas yang telah diproses
-    return send_from_directory(UPLOAD_DIR, filename, as_attachment=True)
+    # Jika parameter ?dl=1 disertakan, unduh sebagai attachment; jika tidak, izinkan inline preview/stream browser
+    as_attachment = request.args.get("dl") == "1" or request.args.get("download") == "1"
+    return send_from_directory(UPLOAD_DIR, filename, as_attachment=as_attachment)
 
 
 @app.route("/api/clean", methods=["POST"])
