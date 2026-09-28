@@ -1500,7 +1500,7 @@
                 </div>
                 <div class="spec-item">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83M16.62 12l-5.74 9.94"/></svg>
-                    <span>Suntik EXIF Apple iPhone 15 Pro Max</span>
+                    <span id="specStripExif">Suntik EXIF Kamera Multi-Device</span>
                 </div>
             </div>
         </div>
@@ -1575,6 +1575,35 @@
                             <div class="preview-media-frame">
                                 <img id="beforeImgPreview" class="preview-media" style="display: none;" alt="Preview Foto Asli">
                                 <video id="beforeVidPreview" class="preview-media" style="display: none;" controls playsinline></video>
+                            </div>
+                        </div>
+
+                        <!-- Target Camera Profile Preset Selector -->
+                        <div class="camera-preset-box" style="margin-top: 14px; margin-bottom: 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 12px 14px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <label for="cameraPresetSelect" style="font-size: 12px; font-weight: 700; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; letter-spacing: 0.3px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                    PROFIL KAMERA SUNTIKAN (EXIF)
+                                </label>
+                                <span id="presetCategoryBadge" style="font-size: 10.5px; background: rgba(99, 102, 241, 0.15); color: #818cf8; font-weight: 700; padding: 2px 7px; border-radius: 4px;">iOS Flagship</span>
+                            </div>
+                            <div style="position: relative;">
+                                <select id="cameraPresetSelect" class="text-input" onchange="onCameraPresetChange()" style="width: 100%; cursor: pointer; padding: 10px 12px; font-size: 13.5px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); color: var(--text-primary); font-weight: 600;">
+                                    <optgroup label="── Flagship Smartphones ──">
+                                        <option value="iphone_15_pro_max" selected>🍏 Apple iPhone 15 Pro Max (24mm f/1.78 • iOS 18.1.1)</option>
+                                        <option value="samsung_s24_ultra">📱 Samsung Galaxy S24 Ultra (200MP f/1.7 • One UI 6.1)</option>
+                                        <option value="google_pixel_8_pro">🤖 Google Pixel 8 Pro (50MP f/1.68 • Android 14)</option>
+                                    </optgroup>
+                                    <optgroup label="── Kamera Profesional / Mirrorless ──">
+                                        <option value="sony_a7_iv">📷 Sony Alpha 7 IV / A7 IV (FE 24-70mm F2.8 GM II)</option>
+                                        <option value="canon_eos_r5">📸 Canon EOS R5 (RF 24-70mm F2.8 L IS USM)</option>
+                                        <option value="fujifilm_xt5">🎞️ Fujifilm X-T5 (XF 16-55mm F2.8 R LM WR)</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div id="presetDetailText" style="font-size: 11.5px; color: var(--text-muted); margin-top: 6px; display: flex; align-items: center; gap: 5px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>Make: Apple • Model: iPhone 15 Pro Max • Lensa: Triple Camera 6.765mm f/1.78</span>
                             </div>
                         </div>
 
@@ -1697,7 +1726,7 @@
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                                         Injeksi Lensa Fisik
                                     </div>
-                                    <div class="spec-feature-text">Menyematkan profil optik Apple iPhone 15 Pro Max (shutter, ISO, aperture, focal).</div>
+                                    <div class="spec-feature-text">Menyematkan profil optik kamera asli (Apple, Samsung, Sony, Canon, dll) lengkap dengan shutter, ISO, aperture, dan lensa.</div>
                                 </div>
                             </div>
                         </div>
@@ -2222,6 +2251,50 @@
         const afterBox = document.getElementById('afterActionBox');
         const downloadBtnText = document.getElementById('downloadBtnText');
         const afterActionBadge = document.getElementById('afterActionBadge');
+        const cameraPresetSelect = document.getElementById('cameraPresetSelect');
+        const presetCategoryBadge = document.getElementById('presetCategoryBadge');
+        const presetDetailText = document.getElementById('presetDetailText');
+
+        const PRESET_DESCRIPTIONS = {
+            iphone_15_pro_max: {
+                cat: 'iOS Flagship',
+                detail: 'Make: Apple • Model: iPhone 15 Pro Max • Lensa: Triple Camera 6.765mm f/1.78'
+            },
+            samsung_s24_ultra: {
+                cat: 'Android Flagship',
+                detail: 'Make: Samsung • Model: SM-S928B • Lensa: 200MP Wide 6.3mm f/1.7'
+            },
+            google_pixel_8_pro: {
+                cat: 'Google HDR+',
+                detail: 'Make: Google • Model: Pixel 8 Pro • Lensa: Octa PD 50MP 6.9mm f/1.68'
+            },
+            sony_a7_iv: {
+                cat: 'Full-Frame Mirrorless',
+                detail: 'Make: Sony • Model: ILCE-7M4 • Lensa: FE 24-70mm F2.8 GM II'
+            },
+            canon_eos_r5: {
+                cat: 'Cinema & Studio',
+                detail: 'Make: Canon • Model: Canon EOS R5 • Lensa: RF 24-70mm F2.8 L IS USM'
+            },
+            fujifilm_xt5: {
+                cat: 'Film Simulation',
+                detail: 'Make: FUJIFILM • Model: X-T5 • Lensa: XF 16-55mm F2.8 R LM WR'
+            }
+        };
+
+        function onCameraPresetChange() {
+            if (!cameraPresetSelect) return;
+            const val = cameraPresetSelect.value;
+            const info = PRESET_DESCRIPTIONS[val] || PRESET_DESCRIPTIONS.iphone_15_pro_max;
+            if (presetCategoryBadge) presetCategoryBadge.innerText = info.cat;
+            if (presetDetailText) {
+                presetDetailText.innerHTML = `
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>${info.detail}</span>
+                `;
+            }
+        }
+        onCameraPresetChange();
 
         let previewObjectUrl = null;
 
@@ -2481,10 +2554,13 @@
 
         async function processImage() {
             statusEl.style.color = '#818cf8';
-            statusEl.innerText = 'Membersihkan metadata AI & menyuntikkan profil optik Apple...';
+            statusEl.innerText = 'Membersihkan metadata AI & menyuntikkan profil optik kamera...';
 
             const formData = new FormData();
             formData.append('image', file);
+            if (cameraPresetSelect) {
+                formData.append('camera_preset', cameraPresetSelect.value);
+            }
 
             const res = await fetch('/api/clean', {
                 method: 'POST',
@@ -2493,19 +2569,20 @@
             });
             const data = await res.json();
             if (data.success) {
+                const camLabel = (data.report && data.report.camera_label) ? data.report.camera_label : 'Kamera Asli';
                 statusEl.style.color = 'var(--color-success)';
-                statusEl.innerText = '✓ Selesai. Metadata AI dibersihkan & EXIF disuntikkan.';
+                statusEl.innerText = '✓ Selesai. Metadata AI dibersihkan & EXIF ' + camLabel + ' disuntikkan.';
                 outputBadge.innerText = '✓ Selesai & Terverifikasi';
                 outputBadge.style.color = 'var(--color-success)';
                 showAfterAction(data.download_url, data.filename, false);
-                renderReport(data.report, '[3] Metadata Kamera Asli yang Disuntikkan (EXIF)');
+                renderReport(data.report, `[3] Metadata Kamera Asli yang Disuntikkan (EXIF • ${camLabel})`);
                 try {
                     addHistoryItem({
                         title: data.filename || (file ? file.name : 'foto_clean.jpg'),
                         type: 'photo',
                         typeLabel: 'Foto Bersih',
                         sizeStr: file ? (file.size / (1024 * 1024)).toFixed(2) + ' MB' : '',
-                        metaInfo: 'EXIF Apple iPhone 15 Pro Max',
+                        metaInfo: 'EXIF ' + camLabel,
                         downloadUrl: data.download_url
                     });
                 } catch (he) {}
@@ -2523,6 +2600,9 @@
 
             const formData = new FormData();
             formData.append('video', file);
+            if (cameraPresetSelect) {
+                formData.append('camera_preset', cameraPresetSelect.value);
+            }
 
             const res = await fetch('/api/clean-video', {
                 method: 'POST',
@@ -2560,12 +2640,13 @@
                     if (sdata.status === 'done') {
                         clearInterval(pollTimer);
                         progressWrap.style.display = 'none';
+                        const vCamLabel = (sdata.report && sdata.report.camera_label) || sdata.camera_label || 'Kamera Asli';
                         statusEl.style.color = 'var(--color-success)';
-                        statusEl.innerText = '✓ Video berhasil disanitasi secara lossless!';
+                        statusEl.innerText = '✓ Video berhasil disanitasi secara lossless & EXIF disuntikkan!';
                         outputBadge.innerText = '✓ Selesai & Terverifikasi';
                         outputBadge.style.color = 'var(--color-success)';
                         showAfterAction(sdata.download_url, sdata.filename, true);
-                        renderReport(sdata.report, '[3] Metadata Kamera Asli yang Disuntikkan (QuickTime/EXIF)');
+                        renderReport(sdata.report, `[3] Metadata Kamera Asli yang Disuntikkan (QuickTime • ${vCamLabel})`);
                         try {
                             const vMetaStr = sdata.meta ? `${sdata.meta.resolution || ''} • ${sdata.meta.fps || 30}fps • ${(sdata.meta.duration || 0).toFixed(1)}s` : 'Lossless Stream Copy';
                             addHistoryItem({
@@ -2573,7 +2654,7 @@
                                 type: 'video',
                                 typeLabel: 'Video Bersih',
                                 sizeStr: (file ? (file.size / (1024 * 1024)).toFixed(2) + ' MB' : ''),
-                                metaInfo: vMetaStr,
+                                metaInfo: `${vMetaStr} • ${vCamLabel}`,
                                 downloadUrl: sdata.download_url
                             });
                         } catch (he) {}

@@ -97,11 +97,94 @@ def read_metadata_summary(file_path):
     return removed_items
 
 
-def process_image_metadata_only(input_path, output_path, ext):
+CAMERA_PRESETS = {
+    "iphone_15_pro_max": {
+        "label": "Apple iPhone 15 Pro Max",
+        "make": "Apple",
+        "model": "iPhone 15 Pro Max",
+        "software": "18.1.1",
+        "software_display": "iOS 18.1.1",
+        "lens_model": "iPhone 15 Pro Max back triple camera 6.765mm f/1.78",
+        "fnumber": "1.78",
+        "focal_length": "6.765",
+        "focal_length_display": "24mm (6.765mm optik)",
+        "iso_choices": ["50", "64", "80", "100", "125"],
+        "exp_choices": ["1/60", "1/100", "1/120", "1/250", "1/500"],
+    },
+    "samsung_s24_ultra": {
+        "label": "Samsung Galaxy S24 Ultra",
+        "make": "Samsung",
+        "model": "SM-S928B",
+        "software": "One UI 6.1",
+        "software_display": "One UI 6.1 (Android 14)",
+        "lens_model": "Samsung Galaxy S24 Ultra back camera 6.3mm f/1.7",
+        "fnumber": "1.7",
+        "focal_length": "6.3",
+        "focal_length_display": "23mm (6.3mm optik)",
+        "iso_choices": ["50", "64", "80", "100", "125"],
+        "exp_choices": ["1/60", "1/100", "1/125", "1/250", "1/500"],
+    },
+    "google_pixel_8_pro": {
+        "label": "Google Pixel 8 Pro",
+        "make": "Google",
+        "model": "Pixel 8 Pro",
+        "software": "Android 14",
+        "software_display": "Android 14 (Build UD1A)",
+        "lens_model": "Google Pixel 8 Pro back camera 6.9mm f/1.68",
+        "fnumber": "1.68",
+        "focal_length": "6.9",
+        "focal_length_display": "25mm (6.9mm optik)",
+        "iso_choices": ["40", "50", "64", "100", "125"],
+        "exp_choices": ["1/60", "1/100", "1/120", "1/250", "1/500"],
+    },
+    "sony_a7_iv": {
+        "label": "Sony Alpha 7 IV (ILCE-7M4)",
+        "make": "Sony",
+        "model": "ILCE-7M4",
+        "software": "ILCE-7M4 v2.00",
+        "software_display": "ILCE-7M4 Firmware v2.00",
+        "lens_model": "FE 24-70mm F2.8 GM II",
+        "fnumber": "2.8",
+        "focal_length": "35.0",
+        "focal_length_display": "35mm (FE 24-70mm F2.8 GM II)",
+        "iso_choices": ["100", "160", "200", "320", "400"],
+        "exp_choices": ["1/125", "1/160", "1/200", "1/250", "1/500"],
+    },
+    "canon_eos_r5": {
+        "label": "Canon EOS R5",
+        "make": "Canon",
+        "model": "Canon EOS R5",
+        "software": "Firmware Version 1.9.0",
+        "software_display": "Canon EOS R5 Firmware 1.9.0",
+        "lens_model": "RF24-70mm F2.8 L IS USM",
+        "fnumber": "2.8",
+        "focal_length": "50.0",
+        "focal_length_display": "50mm (RF24-70mm F2.8 L IS USM)",
+        "iso_choices": ["100", "160", "200", "250", "400"],
+        "exp_choices": ["1/125", "1/160", "1/200", "1/250", "1/500"],
+    },
+    "fujifilm_xt5": {
+        "label": "Fujifilm X-T5",
+        "make": "FUJIFILM",
+        "model": "X-T5",
+        "software": "Digital Camera X-T5 Ver.2.01",
+        "software_display": "Fujifilm Firmware Ver.2.01",
+        "lens_model": "XF16-55mmF2.8 R LM WR",
+        "fnumber": "2.8",
+        "focal_length": "23.0",
+        "focal_length_display": "23mm (35mm ekivalen)",
+        "iso_choices": ["125", "160", "200", "250", "400"],
+        "exp_choices": ["1/125", "1/160", "1/250", "1/500", "1/1000"],
+    }
+}
+
+
+def process_image_metadata_only(input_path, output_path, ext, camera_preset="iphone_15_pro_max"):
     """
     Membersihkan 100% metadata tanpa mengubah/mengompresi data piksel asli.
-    Piksel gambar 100% bit-exact dari aslinya, lalu disuntikkan EXIF kamera asli.
+    Piksel gambar 100% bit-exact dari aslinya, lalu disuntikkan EXIF kamera asli sesuai preset.
     """
+    cam = CAMERA_PRESETS.get(camera_preset, CAMERA_PRESETS["iphone_15_pro_max"])
     removed_items = read_metadata_summary(input_path)
     shutil.copy2(input_path, output_path)
 
@@ -111,8 +194,8 @@ def process_image_metadata_only(input_path, output_path, ext):
 
     now = datetime.datetime.now()
     now_str = now.strftime("%Y:%m:%d %H:%M:%S")
-    exp_time = random.choice(["1/60", "1/100", "1/120", "1/250", "1/500"])
-    iso = random.choice(["50", "64", "80", "100", "125"])
+    exp_time = random.choice(cam.get("exp_choices", ["1/60", "1/100", "1/120", "1/250"]))
+    iso = random.choice(cam.get("iso_choices", ["50", "64", "80", "100", "125"]))
 
     ext_clean = ext.lower().replace(".", "")
     injected_exif = []
@@ -121,45 +204,45 @@ def process_image_metadata_only(input_path, output_path, ext):
         # Format JPEG mendukung penuh standarisasi EXIF kamera
         inject_cmd = [
             "exiftool", "-overwrite_original",
-            "-Make=Apple",
-            "-Model=iPhone 15 Pro Max",
-            "-Software=18.1.1",
+            f"-Make={cam['make']}",
+            f"-Model={cam['model']}",
+            f"-Software={cam['software']}",
             f"-Exif:DateTimeOriginal={now_str}",
             f"-Exif:CreateDate={now_str}",
             f"-Exif:ModifyDate={now_str}",
             f"-Exif:ExposureTime={exp_time}",
-            "-Exif:FNumber=1.78",
+            f"-Exif:FNumber={cam['fnumber']}",
             f"-Exif:ISO={iso}",
-            "-Exif:FocalLength=6.765",
-            "-Exif:LensModel=iPhone 15 Pro Max back triple camera 6.765mm f/1.78",
+            f"-Exif:FocalLength={cam['focal_length']}",
+            f"-Exif:LensModel={cam['lens_model']}",
             output_path
         ]
         subprocess.run(inject_cmd, check=True, timeout=60)
         injected_exif = [
-            ("Make", "Apple"),
-            ("Model", "iPhone 15 Pro Max"),
-            ("Software", "iOS 18.1.1"),
+            ("Make", cam["make"]),
+            ("Model", cam["model"]),
+            ("Software", cam.get("software_display", cam["software"])),
             ("DateTimeOriginal", now_str),
             ("ExposureTime", exp_time),
-            ("FNumber", "f/1.78"),
+            ("FNumber", f"f/{cam['fnumber']}"),
             ("ISO", iso),
-            ("FocalLength", "24mm (6.765mm optik)"),
-            ("LensModel", "iPhone 15 Pro Max back triple camera 6.765mm f/1.78"),
+            ("FocalLength", cam.get("focal_length_display", f"{cam['focal_length']}mm")),
+            ("LensModel", cam["lens_model"]),
         ]
     else:
         # PNG/WEBP dll: Tag umum device capture
         inject_cmd = [
             "exiftool", "-overwrite_original",
-            "-Make=Apple",
-            "-Model=iPhone 15 Pro Max",
-            "-Software=18.1.1",
+            f"-Make={cam['make']}",
+            f"-Model={cam['model']}",
+            f"-Software={cam['software']}",
             output_path
         ]
         subprocess.run(inject_cmd, check=True, timeout=60)
         injected_exif = [
-            ("Make", "Apple"),
-            ("Model", "iPhone 15 Pro Max"),
-            ("Software", "iOS 18.1.1"),
+            ("Make", cam["make"]),
+            ("Model", cam["model"]),
+            ("Software", cam.get("software_display", cam["software"])),
         ]
 
     modifications = [
@@ -173,14 +256,15 @@ def process_image_metadata_only(input_path, output_path, ext):
         },
         {
             "stage": "Injeksi Metadata Kamera Asli",
-            "action": "Disuntikkan EXIF resmi kamera Apple iPhone 15 Pro Max (ISO, Shutter, Lensa, Tanggal) seolah difoto langsung."
+            "action": f"Disuntikkan EXIF resmi kamera {cam['label']} (ISO, Shutter, Lensa, Tanggal) seolah difoto langsung."
         }
     ]
 
     return {
         "removed_items": removed_items,
         "modifications": modifications,
-        "injected_exif": injected_exif
+        "injected_exif": injected_exif,
+        "camera_label": cam["label"]
     }
 
 
@@ -217,13 +301,14 @@ def probe_video(path):
     }
 
 
-def run_video_job_metadata_only(job_id, in_path, out_path, probe):
+def run_video_job_metadata_only(job_id, in_path, out_path, probe, camera_preset="iphone_15_pro_max"):
     """
     Video diproses secara STREAM COPY (-c copy).
     100% tanpa kompresi ulang, tanpa penurunan kualitas (lossless copy),
     tanpa filter atau effect visual apapun.
-    Metadata container/stream AI dibuang lalu diinjeksi metadata Apple QuickTime.
+    Metadata container/stream AI dibuang lalu diinjeksi metadata kamera asli sesuai preset.
     """
+    cam = CAMERA_PRESETS.get(camera_preset, CAMERA_PRESETS["iphone_15_pro_max"])
     try:
         JOBS[job_id]["status"] = "processing"
         JOBS[job_id]["progress"] = 15
@@ -243,16 +328,16 @@ def run_video_job_metadata_only(job_id, in_path, out_path, probe):
         subprocess.run(cmd, check=True, timeout=180)
         JOBS[job_id]["progress"] = 70
 
-        # 2. Hapus sisa metadata dan suntikkan tag kamera Apple QuickTime
+        # 2. Hapus sisa metadata dan suntikkan tag kamera QuickTime
         now = datetime.datetime.now()
         create_str = now.strftime("%Y-%m-%d %H:%M:%S")
 
         exif_cmd = [
             "exiftool", "-overwrite_original",
             "-all=",
-            "-Make=Apple",
-            "-Model=iPhone 15 Pro Max",
-            "-Software=18.1.1",
+            f"-Make={cam['make']}",
+            f"-Model={cam['model']}",
+            f"-Software={cam['software']}",
             f"-CreateDate={now.strftime('%Y:%m:%d %H:%M:%S')}",
             f"-ModifyDate={now.strftime('%Y:%m:%d %H:%M:%S')}",
             out_path,
@@ -264,9 +349,9 @@ def run_video_job_metadata_only(job_id, in_path, out_path, probe):
             os.remove(in_path)
 
         injected = [
-            ("Make", "Apple"),
-            ("Model", "iPhone 15 Pro Max"),
-            ("Software", "iOS 18.1.1"),
+            ("Make", cam["make"]),
+            ("Model", cam["model"]),
+            ("Software", cam.get("software_display", cam["software"])),
             ("CreateDate", create_str),
         ]
 
@@ -281,7 +366,7 @@ def run_video_job_metadata_only(job_id, in_path, out_path, probe):
             },
             {
                 "stage": "Injeksi Metadata QuickTime Kamera Asli",
-                "action": "Disuntikkan tag kamera Apple iPhone 15 Pro Max sebagai metadata rekaman asli."
+                "action": f"Disuntikkan tag kamera {cam['label']} sebagai metadata rekaman asli."
             }
         ]
 
@@ -289,8 +374,10 @@ def run_video_job_metadata_only(job_id, in_path, out_path, probe):
         JOBS[job_id]["report"] = {
             "removed_items": removed,
             "modifications": modifications,
-            "injected_exif": injected
+            "injected_exif": injected,
+            "camera_label": cam["label"]
         }
+        JOBS[job_id]["camera_label"] = cam["label"]
         JOBS[job_id]["filename"] = out_name
         JOBS[job_id]["progress"] = 100
         JOBS[job_id]["status"] = "done"
@@ -357,6 +444,10 @@ def clean():
     if file.filename == "":
         return jsonify({"error": "Empty file"}), 400
 
+    camera_preset = request.form.get("camera_preset", "iphone_15_pro_max")
+    if camera_preset not in CAMERA_PRESETS:
+        camera_preset = "iphone_15_pro_max"
+
     clean_token = uuid.uuid4().hex[:8]
     cleanup_old_uploads()
     orig_ext = os.path.splitext(file.filename)[1] or ".jpg"
@@ -369,7 +460,7 @@ def clean():
 
     file.save(temp_in)
     try:
-        report = process_image_metadata_only(temp_in, out_path, orig_ext)
+        report = process_image_metadata_only(temp_in, out_path, orig_ext, camera_preset)
         if os.path.exists(temp_in):
             os.remove(temp_in)
         return jsonify({
@@ -391,6 +482,10 @@ def clean_video():
     file = request.files["video"]
     if file.filename == "":
         return jsonify({"error": "Empty file"}), 400
+
+    camera_preset = request.form.get("camera_preset", "iphone_15_pro_max")
+    if camera_preset not in CAMERA_PRESETS:
+        camera_preset = "iphone_15_pro_max"
 
     job_id = uuid.uuid4().hex[:12]
     cleanup_old_uploads()
@@ -429,7 +524,7 @@ def clean_video():
         },
     }
 
-    t = threading.Thread(target=run_video_job_metadata_only, args=(job_id, in_path, out_path, probe), daemon=True)
+    t = threading.Thread(target=run_video_job_metadata_only, args=(job_id, in_path, out_path, probe, camera_preset), daemon=True)
     t.start()
 
     return jsonify({"success": True, "job_id": job_id})
