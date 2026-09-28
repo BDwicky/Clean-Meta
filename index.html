@@ -3,419 +3,1717 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Cleaner - Cloaking & Metadata Log</title>
+    <title>Clean-Meta Studio — Media Forensics & Metadata Sanitizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-canvas: #090a0f;
+            --bg-surface: #10121a;
+            --bg-card: #151822;
+            --bg-card-hover: #191c28;
+            --bg-inset: #0b0d13;
+            --border-subtle: rgba(255, 255, 255, 0.07);
+            --border-medium: #222634;
+            --border-hover: #32384c;
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            --accent-brand: #4f46e5;
+            --accent-brand-hover: #4338ca;
+            --accent-brand-light: #6366f1;
+            --accent-brand-tint: rgba(79, 70, 229, 0.12);
+            
+            --color-success: #10b981;
+            --color-success-tint: rgba(16, 185, 129, 0.12);
+            --color-warning: #f59e0b;
+            --color-warning-tint: rgba(245, 158, 11, 0.12);
+            --color-danger: #ef4444;
+            --color-danger-tint: rgba(239, 68, 68, 0.12);
+
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --radius-xl: 18px;
+
+            --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #090d16;
-            color: #f8fafc;
+            font-family: var(--font-sans);
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ================= NAVIGATION HEADER ================= */
+        .app-header {
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border-subtle);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-inner {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .brand-logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(145deg, #1e2230, #131620);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .brand-title {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: var(--radius-sm);
+            background: var(--accent-brand-tint);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            letter-spacing: 0.02em;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background-color: var(--bg-inset);
+            padding: 4px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-subtle);
+            gap: 4px;
+        }
+
+        .nav-tab {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+            border: 1px solid transparent;
+        }
+
+        .nav-tab:hover {
+            color: var(--text-primary);
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        .nav-tab.active {
+            color: #ffffff;
+            background-color: var(--bg-card);
+            border-color: var(--border-medium);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .engine-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12.5px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--color-success);
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+        }
+
+        .btn-icon-soft {
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 7px 10px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-family: inherit;
+            transition: all 0.15s ease;
+        }
+
+        .btn-icon-soft:hover {
+            color: var(--text-primary);
+            border-color: var(--border-medium);
+            background-color: rgba(255, 255, 255, 0.04);
+        }
+
+        /* ================= SUB-BANNER SPECS STRIP ================= */
+        .spec-strip {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 10px 24px;
+        }
+
+        .spec-inner {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 12.5px;
+            color: var(--text-secondary);
+        }
+
+        .spec-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .spec-item svg {
+            color: #818cf8;
+        }
+
+        /* ================= MAIN CONTAINER ================= */
+        .main-wrapper {
+            max-width: 1240px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 28px 24px 60px 24px;
+            flex: 1;
+        }
+
+        /* ================= STUDIO DUAL-COLUMN LAYOUT ================= */
+        .studio-grid {
+            display: grid;
+            grid-template-columns: 460px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        @media (max-width: 980px) {
+            .studio-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 860px) {
+            .header-inner {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                grid-template-areas:
+                    "brand meta"
+                    "tabs tabs";
+                gap: 10px 12px;
+                padding: 10px 14px;
+            }
+            .brand-wrap {
+                grid-area: brand;
+            }
+            .header-meta {
+                grid-area: meta;
+                justify-content: flex-end;
+            }
+            .nav-tabs {
+                grid-area: tabs;
+                width: 100%;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-tabs::-webkit-scrollbar {
+                display: none;
+            }
+            .nav-tab {
+                flex: 0 0 auto;
+                padding: 7px 13px;
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-wrapper {
+                padding: 14px 10px 48px 10px;
+            }
+            .spec-strip {
+                padding: 8px 12px;
+            }
+            .spec-inner {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px 10px;
+                font-size: 11.5px;
+            }
+            .spec-item {
+                gap: 5px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .panel {
+                padding: 16px 13px;
+                border-radius: var(--radius-md);
+            }
+            .panel-header {
+                margin-bottom: 12px;
+                padding-bottom: 10px;
+            }
+            .panel-title {
+                font-size: 14.5px;
+            }
+            .panel-subtitle {
+                font-size: 12px;
+                margin-bottom: 14px;
+            }
+            .dropzone {
+                padding: 22px 12px;
+            }
+            .dropzone-icon {
+                width: 42px;
+                height: 42px;
+                margin-bottom: 8px;
+            }
+            .dropzone-text-primary {
+                font-size: 13.5px;
+            }
+            .dropzone-text-sub {
+                font-size: 11px;
+            }
+            .preview-media-frame, .preview-media {
+                max-height: 220px;
+            }
+            .preview-box {
+                padding: 10px;
+                margin-top: 12px;
+            }
+            .exif-table th {
+                padding: 6px 8px;
+                font-size: 10px;
+            }
+            .exif-table td {
+                padding: 6px 8px;
+                font-size: 11px;
+            }
+            .exif-table td.key {
+                width: 44%;
+            }
+            .forensic-log-box {
+                font-size: 11px;
+                padding: 10px;
+                max-height: 180px;
+            }
+            .btn-primary, .btn-success {
+                padding: 12px 14px;
+                font-size: 13.5px;
+            }
+        }
+
+        @media (max-width: 580px) {
+            .input-group {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .text-input {
+                width: 100%;
+                flex: 1 1 100%;
+                padding: 11px 13px;
+                font-size: 13.5px;
+            }
+            .btn-paste {
+                flex: 1 1 0;
+                justify-content: center;
+                height: 40px;
+                font-size: 12.5px;
+            }
+            #ytInfoCard {
+                padding: 10px !important;
+                gap: 10px !important;
+            }
+            #ytInfoCard > div:first-child {
+                width: 96px !important;
+                height: 54px !important;
+            }
+            #ytInfoTitle {
+                font-size: 12.5px !important;
+                white-space: normal !important;
+                display: -webkit-box !important;
+                -webkit-line-clamp: 2 !important;
+                -webkit-box-orient: vertical !important;
+                line-height: 1.35 !important;
+            }
+            .quality-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 6px !important;
+                margin-bottom: 14px !important;
+            }
+            .quality-card {
+                padding: 8px 4px !important;
+                border-radius: var(--radius-sm) !important;
+            }
+            .quality-name {
+                font-size: 12.5px !important;
+            }
+            .quality-sub {
+                font-size: 9.5px !important;
+                margin-top: 1px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-meta .engine-pill span {
+                display: none;
+            }
+            .header-meta .engine-pill {
+                padding: 6px 8px;
+            }
+            .brand-title {
+                font-size: 15px;
+            }
+            .spec-inner {
+                font-size: 11px;
+                gap: 6px 8px;
+            }
+            .main-wrapper {
+                padding: 12px 8px 36px 8px;
+            }
+            .panel {
+                padding: 14px 10px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .quality-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+
+        /* Card Surface */
+        .panel {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .panel-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.01em;
+        }
+
+        .panel-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
+
+        /* ================= SUB-MODE SWITCHER (FOTO / VIDEO) ================= */
+        .mode-selector {
+            display: flex;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 4px;
+            margin-bottom: 18px;
+            gap: 4px;
+        }
+
+        .mode-opt {
+            flex: 1;
+            padding: 9px 12px;
+            text-align: center;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .mode-opt:hover {
+            color: var(--text-primary);
+        }
+
+        .mode-opt.active {
+            background-color: var(--accent-brand);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+        }
+
+        /* ================= DROPZONE ================= */
+        .dropzone {
+            border: 1.5px dashed var(--border-hover);
+            border-radius: var(--radius-md);
+            background: var(--bg-inset);
+            padding: 32px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            margin-bottom: 18px;
+        }
+
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--accent-brand-light);
+            background-color: rgba(79, 70, 229, 0.04);
+        }
+
+        .dropzone-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 12px auto;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        .dropzone:hover .dropzone-icon {
+            transform: translateY(-2px);
+            color: var(--accent-brand-light);
+            border-color: var(--accent-brand-light);
+        }
+
+        .dropzone-text-primary {
+            font-size: 14.5px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .dropzone-text-sub {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .format-pills {
             display: flex;
             justify-content: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .format-pill {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 2px 7px;
+            border-radius: var(--radius-sm);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Selected file pill card */
+        .file-selected-card {
+            display: none;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            margin-bottom: 18px;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 24px 16px;
-            box-sizing: border-box;
+            justify-content: space-between;
+            gap: 12px;
         }
-        .card {
-            background: #111827;
-            padding: 28px;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-            max-width: 640px;
-            width: 100%;
-            border: 1px solid #1f2937;
-        }
-        h2 { margin-top: 0; font-size: 22px; color: #38bdf8; text-align: center; }
-        p.subtitle { color: #9ca3af; font-size: 13.5px; line-height: 1.5; text-align: center; margin-bottom: 20px; }
 
-        .mode-tabs {
+        .file-info-group {
             display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .mode-tab {
-            flex: 1;
-            padding: 11px;
-            border-radius: 9px;
-            border: 1px solid #1f2937;
-            background: #0b1329;
-            color: #9ca3af;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            text-align: center;
-            transition: 0.15s;
-            user-select: none;
-        }
-        .mode-tab.active {
-            background: #0284c7;
-            border-color: #0284c7;
-            color: white;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
         }
 
-        .dropzone {
-            border: 2px dashed #0284c7;
-            border-radius: 12px;
-            padding: 30px 20px;
-            margin-bottom: 20px;
-            cursor: pointer;
-            background: #0b1329;
-            text-align: center;
-            transition: 0.2s;
+        .file-icon-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: var(--accent-brand-tint);
+            color: var(--accent-brand-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
-        .dropzone:hover { background: #0f1c3d; border-color: #38bdf8; }
-        .dropzone.dragover { background: #0f1c3d; border-color: #38bdf8; }
-        input[type="file"] { display: none; }
-        .btn {
-            background: #0284c7;
-            color: white;
-            border: none;
-            padding: 13px 24px;
-            border-radius: 8px;
+
+        .file-name-meta {
+            overflow: hidden;
+        }
+
+        .file-name-title {
+            font-size: 13.5px;
             font-weight: 600;
-            font-size: 15px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-size-badge {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+        }
+
+        .btn-clear-file {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            transition: color 0.15s;
+        }
+
+        .btn-clear-file:hover {
+            color: var(--color-danger);
+            background: var(--color-danger-tint);
+        }
+
+        /* ================= PREVIEW BOX ================= */
+        .preview-box {
+            display: none;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 18px;
+            text-align: center;
+        }
+
+        .preview-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+        }
+
+        .preview-media-frame {
+            position: relative;
+            background: #000000;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-height: 290px;
+        }
+
+        .preview-media {
+            max-width: 100%;
+            max-height: 290px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+        }
+
+        /* ================= BUTTONS ================= */
+        .btn-primary {
+            background: var(--accent-brand);
+            border: 1px solid var(--accent-brand-light);
+            color: #ffffff;
+            font-family: var(--font-sans);
+            font-weight: 600;
+            font-size: 14.5px;
+            padding: 13px 20px;
+            border-radius: var(--radius-md);
             cursor: pointer;
             width: 100%;
-            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.18);
         }
-        .btn:hover { background: #0369a1; }
-        .btn:disabled { background: #374151; cursor: not-allowed; }
-        .status { margin-top: 15px; font-size: 14px; text-align: center; font-weight: 500; }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-brand-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            background: #1e2230;
+            border-color: #2a2f42;
+            color: #64748b;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: var(--color-success);
+            border: 1px solid #34d399;
+            color: #ffffff;
+            font-family: var(--font-sans);
+            font-weight: 600;
+            font-size: 14.5px;
+            padding: 13px 20px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        }
+
+        /* ================= STATUS & PROGRESS ================= */
+        .status-box {
+            margin-top: 14px;
+            font-size: 13.5px;
+            text-align: center;
+            font-weight: 500;
+            min-height: 20px;
+        }
+
         .progress-wrap {
             display: none;
-            margin-top: 12px;
-            background: #030712;
-            border-radius: 8px;
+            margin-top: 14px;
+            background: var(--bg-inset);
+            border-radius: var(--radius-sm);
             height: 22px;
             overflow: hidden;
-            border: 1px solid #1f2937;
+            border: 1px solid var(--border-medium);
+            position: relative;
         }
+
         .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #0284c7, #38bdf8);
+            background: linear-gradient(90deg, #4f46e5, #6366f1);
             width: 0%;
-            transition: width 0.4s ease;
+            transition: width 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 11.5px;
-            font-weight: 700;
-            color: white;
+            font-family: var(--font-mono);
+            font-weight: 600;
+            color: #ffffff;
         }
-        .download-btn {
-            display: none;
-            margin-top: 16px;
-            background: #10b981;
-            text-decoration: none;
-            padding: 13px;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-            text-align: center;
-        }
-        .download-btn:hover { background: #059669; }
+
         .vmeta {
             display: none;
-            margin-top: 12px;
-            font-size: 12.5px;
-            color: #9ca3af;
+            margin-top: 10px;
+            font-size: 12px;
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
             text-align: center;
+            background: var(--bg-inset);
+            padding: 6px 10px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle);
         }
 
-        .log-container {
-            display: none;
-            margin-top: 24px;
-            background: #030712;
-            border: 1px solid #1f2937;
-            border-radius: 10px;
+        /* ================= FORENSICS INSPECTOR (RIGHT PANEL) ================= */
+        .telemetry-card {
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
             padding: 16px;
-            text-align: left;
-            font-size: 13px;
+            margin-bottom: 16px;
         }
-        .log-section-title {
-            font-weight: 700;
+
+        .telemetry-card-title {
             font-size: 13px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin: 14px 0 8px 0;
+            letter-spacing: 0.04em;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
+            gap: 8px;
+        }
+
+        .badge-count {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+
+        .log-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .log-list li {
+            position: relative;
+            padding-left: 18px;
+            line-height: 1.5;
+        }
+
+        .log-list li::before {
+            content: "•";
+            position: absolute;
+            left: 4px;
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1;
+            top: 2px;
+        }
+
+        .tag-pill-list {
+            display: flex;
+            flex-wrap: wrap;
             gap: 6px;
         }
-        .log-section-title:first-child { margin-top: 0; }
-        .text-red { color: #f87171; }
-        .text-yellow { color: #fbbf24; }
-        .text-green { color: #34d399; }
-        .log-list {
-            margin: 0;
-            padding-left: 18px;
-            color: #d1d5db;
-            line-height: 1.6;
+
+        .tag-pill {
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            word-break: break-all;
         }
-        .log-table {
+
+        /* EXIF Data Table */
+        .exif-table-wrapper {
+            overflow-x: auto;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .exif-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 6px;
+            font-size: 12.5px;
+            text-align: left;
         }
-        .log-table td {
-            padding: 4px 8px;
-            border-bottom: 1px solid #1f2937;
-            font-family: monospace;
-            font-size: 12px;
-        }
-        .log-table td.key { color: #9ca3af; width: 35%; }
-        .log-table td.val { color: #38bdf8; }
 
-        /* Preview Containers */
-        .preview-box {
-            display: none;
-            margin-bottom: 20px;
-            background: #030712;
-            border: 1px solid #1f2937;
-            border-radius: 12px;
-            padding: 14px;
+        .exif-table th {
+            background-color: #12151e;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .exif-table td {
+            padding: 7px 12px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+        }
+
+        .exif-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .exif-table td.key {
+            color: var(--text-secondary);
+            width: 38%;
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .exif-table td.val {
+            color: #93c5fd;
+            font-weight: 500;
+        }
+
+        /* Specification Placeholder (Empty State) */
+        .empty-spec-card {
+            background: var(--bg-inset);
+            border: 1px dashed var(--border-medium);
+            border-radius: var(--radius-md);
+            padding: 32px 24px;
             text-align: center;
         }
-        .preview-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: #9ca3af;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+
+        .empty-spec-icon {
+            width: 44px;
+            height: 44px;
+            margin: 0 auto 14px auto;
+            background: var(--bg-card);
+            border-radius: 50%;
+            border: 1px solid var(--border-medium);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            color: #818cf8;
         }
-        .preview-media {
-            max-width: 100%;
-            max-height: 280px;
-            border-radius: 8px;
-            object-fit: contain;
-            background: #000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-        .preview-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 16px;
-        }
-        @media (max-width: 540px) {
-            .preview-grid { grid-template-columns: 1fr; }
-        }
-        .preview-col {
-            background: #070d1e;
-            border: 1px solid #1f2937;
-            border-radius: 10px;
-            padding: 10px;
-            text-align: center;
-        }
-        .preview-col-title {
-            font-size: 12px;
+
+        .empty-spec-title {
+            font-size: 15px;
             font-weight: 700;
+            color: var(--text-primary);
             margin-bottom: 8px;
         }
 
-        /* Modal PIN */
+        .empty-spec-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            max-width: 440px;
+            margin: 0 auto 20px auto;
+        }
+
+        .spec-features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            text-align: left;
+            margin-top: 18px;
+        }
+
+        @media (max-width: 600px) {
+            .spec-features {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .spec-feature-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+        }
+
+        .spec-feature-heading {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .spec-feature-text {
+            font-size: 11.5px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* ================= YOUTUBE & AUDIO SECTIONS ================= */
+        .single-column-panel {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .text-input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-medium);
+            background: var(--bg-inset);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.15s ease;
+        }
+
+        .text-input:focus {
+            border-color: var(--accent-brand-light);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+        }
+
+        .btn-paste {
+            padding: 0 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            color: var(--text-secondary);
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-paste:hover {
+            color: var(--text-primary);
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+        }
+
+        /* Quality grid */
+        .quality-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        /* Responsive quality-grid overrides handled in main responsive stylesheet */
+
+        .quality-card {
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 10px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+
+        .quality-card:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        .quality-card.active {
+            background: var(--accent-brand-tint);
+            border-color: var(--accent-brand-light);
+            color: #ffffff;
+        }
+
+        .quality-name {
+            font-size: 13.5px;
+            font-weight: 700;
+        }
+
+        .quality-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .quality-card.active .quality-sub {
+            color: #c7d2fe;
+        }
+
+        /* ================= PIN SECURITY MODAL ================= */
         .pin-modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(4, 7, 14, 0.88);
-            backdrop-filter: blur(8px);
+            background: rgba(5, 7, 11, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 99999;
+            z-index: 999999;
+            padding: 16px;
         }
+
         .pin-modal-card {
-            background: #111827;
-            border: 1px solid #1f2937;
-            border-radius: 16px;
-            padding: 28px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-xl);
+            padding: 36px 30px;
             width: 100%;
-            max-width: 340px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            max-width: 380px;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
             text-align: center;
             box-sizing: border-box;
         }
+
+        .pin-lock-icon {
+            width: 52px;
+            height: 52px;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-medium);
+            border-radius: 50%;
+            margin: 0 auto 18px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #818cf8;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .pin-modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            letter-spacing: -0.01em;
+        }
+
+        .pin-modal-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+
         .pin-input {
             width: 100%;
-            padding: 12px 16px;
-            border-radius: 8px;
-            border: 1px solid #374151;
-            background: #0b1329;
-            color: #f8fafc;
-            font-size: 20px;
-            letter-spacing: 6px;
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-medium);
+            background: var(--bg-inset);
+            color: var(--text-primary);
+            font-size: 24px;
+            letter-spacing: 8px;
             text-align: center;
-            margin: 16px 0 12px 0;
-            box-sizing: border-box;
+            margin-bottom: 14px;
             outline: none;
+            font-family: var(--font-mono);
+            transition: all 0.15s ease;
         }
+
         .pin-input:focus {
-            border-color: #0284c7;
-            box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.25);
+            border-color: var(--accent-brand-light);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
         }
+
         .pin-error {
-            color: #f87171;
-            font-size: 13px;
-            margin-top: 8px;
+            color: var(--color-danger);
+            font-size: 12.5px;
+            margin-top: 10px;
             display: none;
+        }
+
+        /* Shake animation for incorrect pin */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        .shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* Footer */
+        .app-footer {
+            border-top: 1px solid var(--border-subtle);
+            background: var(--bg-surface);
+            padding: 16px 24px;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .app-footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .app-footer a:hover {
+            color: var(--text-primary);
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <!-- PIN Gate Popup -->
+    <!-- ================= PIN AUTHENTICATION GATE ================= -->
     <div id="pinModal" class="pin-modal-overlay">
-        <div class="pin-modal-card">
-            <h3 style="margin: 0 0 8px 0; color: #38bdf8; font-size: 18px;">Autentikasi Akses</h3>
-            <p style="margin: 0; color: #9ca3af; font-size: 13px;">Masukkan PIN keamanan untuk masuk</p>
+        <div class="pin-modal-card" id="pinCard">
+            <div class="pin-lock-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+            </div>
+            <h3 class="pin-modal-title">Autentikasi Workstation</h3>
+            <p class="pin-modal-subtitle">Masukkan kode PIN keamanan untuk membuka akses instrumen Clean-Meta</p>
             <form id="pinForm" onsubmit="handlePinSubmit(event)">
                 <input type="password" id="pinInput" class="pin-input" maxlength="10" placeholder="••••••" autofocus autocomplete="off">
-                <button type="submit" class="btn" style="padding: 10px 16px; font-size: 14px;">Buka Akses</button>
-                <div id="pinError" class="pin-error">PIN salah, coba lagi!</div>
+                <button type="submit" class="btn-primary" style="padding: 12px;">Buka Akses</button>
+                <div id="pinError" class="pin-error">PIN salah, silakan coba kembali.</div>
             </form>
         </div>
     </div>
 
-    <div class="card" id="appCard" style="display: none;">
-        <h2>AI Metadata Stripper & Camera Injector</h2>
-        <p class="subtitle">Bersihkan metadata AI (C2PA, XMP, prompt, model) & suntik metadata kamera asli. 100% tanpa efek, tanpa filter, tanpa kompresi piksel/re-encode.</p>
+    <!-- ================= MAIN APPLICATION ================= -->
+    <div id="appCard" style="display: none; display: flex; flex-direction: column; min-height: 100vh;">
+        <!-- Top Navigation Bar -->
+        <header class="app-header">
+            <div class="header-inner">
+                <div class="brand-group">
+                    <div class="brand-logo">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                    </div>
+                    <div class="brand-title">
+                        Clean-Meta
+                        <span class="brand-badge">v2.4 Pro</span>
+                    </div>
+                </div>
 
-        <div class="mode-tabs">
-            <div class="mode-tab active" id="tabImage" onclick="setMode('image')">Foto</div>
-            <div class="mode-tab" id="tabVideo" onclick="setMode('video')">Video</div>
-            <div class="mode-tab" id="tabYouTube" onclick="showSection('youtube')">YouTube</div>
-            <div class="mode-tab" id="tabAudioExtract" onclick="showSection('audio')">🎵 MP3</div>
-        </div>
+                <div class="nav-tabs">
+                    <div class="nav-tab active" id="tabImage" onclick="setMode('image')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        Foto
+                    </div>
+                    <div class="nav-tab" id="tabVideo" onclick="setMode('video')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                        Video
+                    </div>
+                    <div class="nav-tab" id="tabYouTube" onclick="showSection('youtube')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+                        YouTube
+                    </div>
+                    <div class="nav-tab" id="tabAudioExtract" onclick="showSection('audio')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                        Ekstrak MP3
+                    </div>
+                </div>
 
-        <!-- ================= SECTION: CLEANER (FOTO & VIDEO) ================= -->
-        <div id="sectionCleaner">
-        <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-            <div id="dropText">Pilih / Seret Foto atau Video ke Sini (Auto-Detect)</div>
-            <input type="file" id="fileInput" accept="image/*,video/*,.mp4,.mov,.webm,.mkv,.avi">
-        </div>
-
-        <!-- Preview Sebelum Proses -->
-        <div id="beforePreviewBox" class="preview-box">
-            <div class="preview-title">👁 Preview File Asli (Sebelum Proses)</div>
-            <img id="beforeImgPreview" class="preview-media" style="display: none;" alt="Preview Foto Asli">
-            <video id="beforeVidPreview" class="preview-media" style="display: none;" controls playsinline></video>
-        </div>
-
-        <button class="btn" id="uploadBtn" onclick="processFile()">Proses & Bersihkan</button>
-        <div class="status" id="status"></div>
-        <div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar">0%</div></div>
-        <div class="vmeta" id="vmeta"></div>
-
-        <!-- Preview Hasil Sesudah Proses -->
-        <div id="afterPreviewBox" class="preview-box" style="margin-top: 18px; border-color: #059669;">
-            <div class="preview-title" style="color: #34d399;">✓ Preview Hasil Bersih (Bebas Metadata AI)</div>
-            <img id="afterImgPreview" class="preview-media" style="display: none;" alt="Preview Hasil Bersih">
-            <video id="afterVidPreview" class="preview-media" style="display: none;" controls playsinline></video>
-        </div>
-
-        <a id="downloadLink" class="download-btn" download>Unduh Hasil Bersih</a>
-
-        <div id="logContainer" class="log-container">
-            <div class="log-section-title text-red">
-                <span>[1] Data / Metadata Asli yang Dihapus</span>
+                <div class="header-meta">
+                    <div class="engine-pill">
+                        <div class="pulse-dot"></div>
+                        <span>Lossless Engine Siap</span>
+                    </div>
+                    <button class="btn-icon-soft" title="Kunci Sesi" onclick="lockSession()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        Kunci
+                    </button>
+                </div>
             </div>
-            <ul class="log-list" id="removedList"></ul>
+        </header>
 
-            <div class="log-section-title text-yellow">
-                <span>[2] Integritas Kualitas File</span>
+        <!-- Technical Specs Strip -->
+        <div class="spec-strip">
+            <div class="spec-inner">
+                <div class="spec-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>100% Bit-Exact Pixel Passthrough</span>
+                </div>
+                <div class="spec-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <span>Lossless Stream Copy (Tanpa Re-encode)</span>
+                </div>
+                <div class="spec-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span>Purge C2PA, XMP, IPTC & Prompt AI</span>
+                </div>
+                <div class="spec-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83M16.62 12l-5.74 9.94"/></svg>
+                    <span>Suntik EXIF Apple iPhone 15 Pro Max</span>
+                </div>
             </div>
-            <ul class="log-list" id="modList"></ul>
-
-            <div class="log-section-title text-green">
-                <span id="exifTitle">[3] Metadata Kamera Asli yang Disuntikkan (EXIF)</span>
-            </div>
-            <table class="log-table" id="exifTable"></table>
         </div>
-        </div>
 
-        <!-- ================= SECTION: YOUTUBE DOWNLOADER ================= -->
-        <div id="sectionYouTube" style="display: none;">
-            <p class="subtitle" style="margin-bottom: 14px;">Unduh video YouTube (720p/1080p/1440p/4K) atau audio saja (kualitas terbaik). Metadata YouTube otomatis dibersihkan.</p>
+        <!-- Main Content Area -->
+        <main class="main-wrapper">
+            <!-- ================= SECTION: SANITIZER (FOTO & VIDEO) ================= -->
+            <div id="sectionCleaner">
+                <div class="studio-grid">
+                    <!-- Left: Ingestion & Input Bay -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                Ingestion Berkas
+                            </div>
+                            <span style="font-size: 12px; color: var(--text-muted);" id="pipelineLabel">Mode: Foto (Bit-Exact)</span>
+                        </div>
 
-            <input type="text" id="ytUrl" class="pin-input" style="letter-spacing: normal; font-size: 15px; text-align: left; padding: 12px 14px; margin: 0 0 12px 0;" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+                        <!-- Sub Mode Toggle -->
+                        <div class="mode-selector">
+                            <div class="mode-opt active" id="subModeImage" onclick="setMode('image')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                Foto
+                            </div>
+                            <div class="mode-opt" id="subModeVideo" onclick="setMode('video')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                                Video
+                            </div>
+                        </div>
 
-            <div class="mode-tabs" style="margin-bottom: 12px;">
-                <div class="mode-tab active" id="ytModeVideo" onclick="setYtMode('video')">🎬 Video + Audio</div>
-                <div class="mode-tab" id="ytModeAudio" onclick="setYtMode('audio')">🎵 Audio Saja</div>
-            </div>
+                        <!-- Dropzone -->
+                        <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+                            <div class="dropzone-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            </div>
+                            <div class="dropzone-text-primary" id="dropText">Pilih atau seret berkas ke sini</div>
+                            <div class="dropzone-text-sub">Sistem otomatis mendeteksi format gambar atau video</div>
+                            <div class="format-pills">
+                                <span class="format-pill">JPG</span>
+                                <span class="format-pill">PNG</span>
+                                <span class="format-pill">WEBP</span>
+                                <span class="format-pill">MP4</span>
+                                <span class="format-pill">MOV</span>
+                                <span class="format-pill">MKV</span>
+                            </div>
+                            <input type="file" id="fileInput" accept="image/*,video/*,.mp4,.mov,.webm,.mkv,.avi">
+                        </div>
 
-            <div id="ytQualityRow" style="margin-bottom: 14px;">
-                <p style="margin: 0 0 6px 0; font-size: 12.5px; color: #9ca3af; text-align: center;">Kualitas Video (minimal)</p>
-                <div class="mode-tabs">
-                    <div class="mode-tab active" data-ytq="720" onclick="setYtQuality(720)">720p</div>
-                    <div class="mode-tab" data-ytq="1080" onclick="setYtQuality(1080)">1080p</div>
-                    <div class="mode-tab" data-ytq="1440" onclick="setYtQuality(1440)">1440p</div>
-                    <div class="mode-tab" data-ytq="2160" onclick="setYtQuality(2160)">4K</div>
+                        <!-- Selected File Metadata Card -->
+                        <div class="file-selected-card" id="fileMetaCard">
+                            <div class="file-info-group">
+                                <div class="file-icon-badge" id="fileBadgeIcon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                                </div>
+                                <div class="file-name-meta">
+                                    <div class="file-name-title" id="selectedFileName">filename.jpg</div>
+                                    <div class="file-size-badge" id="selectedFileSize">0.0 MB • Foto</div>
+                                </div>
+                            </div>
+                            <button class="btn-clear-file" title="Hapus Berkas" onclick="clearSelectedFile(event)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        </div>
+
+                        <!-- Before Preview Box -->
+                        <div id="beforePreviewBox" class="preview-box">
+                            <div class="preview-header-bar">
+                                <span>Preview Berkas Asli (Input)</span>
+                                <span style="color: var(--text-muted); font-size: 11px;">Belum Diproses</span>
+                            </div>
+                            <div class="preview-media-frame">
+                                <img id="beforeImgPreview" class="preview-media" style="display: none;" alt="Preview Foto Asli">
+                                <video id="beforeVidPreview" class="preview-media" style="display: none;" controls playsinline></video>
+                            </div>
+                        </div>
+
+                        <!-- Action Button & Status -->
+                        <button class="btn-primary" id="uploadBtn" onclick="processFile()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            Proses & Sanitasi Metadata
+                        </button>
+
+                        <div class="status-box" id="status"></div>
+                        <div class="progress-wrap" id="progressWrap">
+                            <div class="progress-bar" id="progressBar">0%</div>
+                        </div>
+                        <div class="vmeta" id="vmeta"></div>
+                    </div>
+
+                    <!-- Right: Telemetry, Logs & Output Bay -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                Telemetri Forensik & Output
+                            </div>
+                            <span style="font-size: 12px; color: var(--color-success); font-weight: 600;" id="outputBadge">Siap Memproses</span>
+                        </div>
+
+                        <!-- Output Preview (When Done) -->
+                        <div id="afterPreviewBox" class="preview-box" style="border-color: rgba(16, 185, 129, 0.3);">
+                            <div class="preview-header-bar" style="color: var(--color-success);">
+                                <span style="display: flex; align-items: center; gap: 6px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                    Hasil Sanitasi (Bebas Metadata AI)
+                                </span>
+                                <span style="font-size: 11px; color: var(--color-success);">Terverifikasi Bersih</span>
+                            </div>
+                            <div class="preview-media-frame">
+                                <img id="afterImgPreview" class="preview-media" style="display: none;" alt="Preview Hasil Bersih">
+                                <video id="afterVidPreview" class="preview-media" style="display: none;" controls playsinline></video>
+                            </div>
+                            <a id="downloadLink" class="btn-success" style="display: none; margin-top: 14px;" download>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Unduh Hasil Sanitasi
+                            </a>
+                        </div>
+
+                        <!-- Forensic Logs (Dynamic Report) -->
+                        <div id="logContainer" style="display: none;">
+                            <!-- [1] Purged Metadata -->
+                            <div class="telemetry-card">
+                                <div class="telemetry-card-title" style="color: #f87171;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                    <span>[1] Metadata Asli & Jejak AI yang Dihapus</span>
+                                    <span class="badge-count" id="removedCount">0</span>
+                                </div>
+                                <div id="removedContainer">
+                                    <ul class="log-list" id="removedList"></ul>
+                                </div>
+                            </div>
+
+                            <!-- [2] Quality Integrity -->
+                            <div class="telemetry-card">
+                                <div class="telemetry-card-title" style="color: #fbbf24;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                    <span>[2] Integritas & Kualitas Berkas</span>
+                                </div>
+                                <ul class="log-list" id="modList"></ul>
+                            </div>
+
+                            <!-- [3] Injected EXIF Table -->
+                            <div class="telemetry-card">
+                                <div class="telemetry-card-title" style="color: #60a5fa;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83M16.62 12l-5.74 9.94"/></svg>
+                                    <span id="exifTitle">[3] Metadata Kamera Asli yang Disuntikkan (EXIF)</span>
+                                </div>
+                                <div class="exif-table-wrapper">
+                                    <table class="exif-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Parameter EXIF</th>
+                                                <th>Nilai Telemetri</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="exifTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Empty State Pipeline Specifications -->
+                        <div class="empty-spec-card" id="emptySpecCard">
+                            <div class="empty-spec-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                            </div>
+                            <div class="empty-spec-title">Standar Forensik & Sanitasi Media</div>
+                            <div class="empty-spec-desc">
+                                Clean-Meta membersihkan jejak generator AI dengan mempertahankan 100% susunan piksel dan audio asli tanpa filter visual atau kompresi ulang.
+                            </div>
+                            <div class="spec-features">
+                                <div class="spec-feature-box">
+                                    <div class="spec-feature-heading">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                        Pembersihan C2PA
+                                    </div>
+                                    <div class="spec-feature-text">Mencabut manifest Content Credentials, prompt AI, XMP tags & identifier model.</div>
+                                </div>
+                                <div class="spec-feature-box">
+                                    <div class="spec-feature-heading">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                        Bit-Exact Passthrough
+                                    </div>
+                                    <div class="spec-feature-text">Data piksel gambar identik bit-for-bit, tanpa penurunan kualitas atau artefak.</div>
+                                </div>
+                                <div class="spec-feature-box">
+                                    <div class="spec-feature-heading">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                        Lossless Stream Copy
+                                    </div>
+                                    <div class="spec-feature-text">Video diproses dengan FFmpeg stream copy (-c copy) secepat kilat tanpa rendering.</div>
+                                </div>
+                                <div class="spec-feature-box">
+                                    <div class="spec-feature-heading">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                        Injeksi Lensa Fisik
+                                    </div>
+                                    <div class="spec-feature-text">Menyematkan profil optik Apple iPhone 15 Pro Max (shutter, ISO, aperture, focal).</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <button class="btn" id="ytBtn" onclick="startYoutubeDownload()">Download dari YouTube</button>
-            <div class="status" id="ytStatus"></div>
-            <div class="progress-wrap" id="ytProgressWrap"><div class="progress-bar" id="ytProgressBar">0%</div></div>
-            <div class="vmeta" id="ytMeta"></div>
+            <!-- ================= SECTION: YOUTUBE DOWNLOADER ================= -->
+            <div id="sectionYouTube" style="display: none;">
+                <div class="panel single-column-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+                            YouTube Media Harvester
+                        </div>
+                        <span style="font-size: 12px; color: var(--text-muted);">Metadata Asli Utuh</span>
+                    </div>
 
-            <!-- Preview hasil YouTube -->
-            <div id="ytAfterBox" class="preview-box" style="margin-top: 18px; border-color: #059669;">
-                <div class="preview-title" style="color: #34d399;">✓ Hasil Unduhan YouTube</div>
-                <video id="ytVidPreview" class="preview-media" style="display: none;" controls playsinline></video>
-                <audio id="ytAudioPreview" style="display: none; width: 100%;" controls></audio>
+                    <p class="panel-subtitle">
+                        Unduh video YouTube hingga resolusi 4K atau track audio berkualitas tinggi. Metadata internal bawaan YouTube (judul, channel, deskripsi, chapter) tetap dipertahankan secara utuh tanpa dibersihkan.
+                    </p>
+
+                    <!-- URL Input with Paste and Check Button -->
+                    <div class="input-group">
+                        <input type="text" id="ytUrl" class="text-input" placeholder="Masukkan URL YouTube (https://www.youtube.com/watch?v=...)" autocomplete="off">
+                        <button type="button" class="btn-paste" onclick="pasteYtUrl()" title="Tempel URL dari clipboard">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                            Tempel
+                        </button>
+                        <button type="button" class="btn-paste" id="ytCheckBtn" onclick="inspectYoutubeUrl(true)" style="background: var(--accent-brand-tint); border-color: rgba(99, 102, 241, 0.3); color: #818cf8;" title="Periksa resolusi asli video">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            Cek Video
+                        </button>
+                    </div>
+
+                    <!-- Video Info Card (Preview Info Asli dari YouTube) -->
+                    <div id="ytInfoCard" style="display: none; background: var(--bg-inset); border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px; align-items: center; gap: 14px;">
+                        <div style="position: relative; width: 120px; height: 68px; flex-shrink: 0; border-radius: var(--radius-sm); overflow: hidden; background: #000;">
+                            <img id="ytInfoThumb" src="" alt="Thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
+                            <span id="ytInfoDuration" style="position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.8); color: #fff; font-size: 10px; font-family: var(--font-mono); padding: 1px 4px; border-radius: 3px;">00:00</span>
+                        </div>
+                        <div style="overflow: hidden; flex: 1;">
+                            <div id="ytInfoTitle" style="font-size: 13.5px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;">Judul Video</div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span id="ytInfoChannel" style="font-size: 12px; color: var(--text-secondary);">Channel</span>
+                                <span id="ytInfoMaxRes" class="brand-badge" style="font-size: 10.5px; background: rgba(16, 185, 129, 0.12); color: #34d399; border-color: rgba(16, 185, 129, 0.25);">Maks 1080p FHD</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stream Type Mode -->
+                    <div class="mode-selector" style="margin-bottom: 14px;">
+                        <div class="mode-opt active" id="ytModeVideo" onclick="setYtMode('video')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                            Video & Audio
+                        </div>
+                        <div class="mode-opt" id="ytModeAudio" onclick="setYtMode('audio')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                            Audio Saja
+                        </div>
+                    </div>
+
+                    <!-- Resolution Quality Grid (Full spectrum available) -->
+                    <div id="ytQualityRow">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">PILIHAN RESOLUSI VIDEO</span>
+                            <span id="ytResStatus" style="font-size: 11.5px; color: var(--text-muted);">Pilih resolusi target (1080p / 720p / 4K)</span>
+                        </div>
+                        <div class="quality-grid" id="ytQualityGrid">
+                            <div class="quality-card" data-ytq="360" onclick="setYtQuality(360)">
+                                <div class="quality-name">360p</div>
+                                <div class="quality-sub">Hemat Kuota</div>
+                            </div>
+                            <div class="quality-card" data-ytq="480" onclick="setYtQuality(480)">
+                                <div class="quality-name">480p</div>
+                                <div class="quality-sub">SD Standar</div>
+                            </div>
+                            <div class="quality-card" data-ytq="720" onclick="setYtQuality(720)">
+                                <div class="quality-name">720p</div>
+                                <div class="quality-sub">HD Standar</div>
+                            </div>
+                            <div class="quality-card active" data-ytq="1080" onclick="setYtQuality(1080)">
+                                <div class="quality-name">1080p</div>
+                                <div class="quality-sub">Full HD / Enhanced</div>
+                            </div>
+                            <div class="quality-card" data-ytq="1440" onclick="setYtQuality(1440)">
+                                <div class="quality-name">1440p</div>
+                                <div class="quality-sub">2K QHD</div>
+                            </div>
+                            <div class="quality-card" data-ytq="2160" onclick="setYtQuality(2160)">
+                                <div class="quality-name">4K</div>
+                                <div class="quality-sub">Ultra HD</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" id="ytBtn" onclick="startYoutubeDownload()">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Mulai Unduh dari YouTube
+                    </button>
+
+                    <div class="status-box" id="ytStatus"></div>
+                    <div class="progress-wrap" id="ytProgressWrap"><div class="progress-bar" id="ytProgressBar">0%</div></div>
+                    <div class="vmeta" id="ytMeta"></div>
+
+                    <!-- Result Box -->
+                    <div id="ytAfterBox" class="preview-box" style="margin-top: 18px; border-color: rgba(16, 185, 129, 0.3);">
+                        <div class="preview-header-bar" style="color: var(--color-success);">
+                            <span>✓ Berkas Siap Diunduh</span>
+                        </div>
+                        <div class="preview-media-frame">
+                            <video id="ytVidPreview" class="preview-media" style="display: none;" controls playsinline></video>
+                            <audio id="ytAudioPreview" style="display: none; width: 100%; padding: 20px;" controls></audio>
+                        </div>
+                        <a id="ytDownloadLink" class="btn-success" style="margin-top: 14px; display: none;" download>
+                            Unduh Berkas
+                        </a>
+                    </div>
+                </div>
             </div>
 
-            <a id="ytDownloadLink" class="download-btn" download>Unduh File</a>
-        </div>
+            <!-- ================= SECTION: EXTRACT AUDIO ================= -->
+            <div id="sectionAudioExtract" style="display: none;">
+                <div class="panel single-column-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                            Audio Extractor (Video ke MP3)
+                        </div>
+                        <span style="font-size: 12px; color: var(--text-muted);">High-Fidelity Studio</span>
+                    </div>
 
-        <!-- ================= SECTION: EXTRACT AUDIO (VIDEO -> MP3) ================= -->
-        <div id="sectionAudioExtract" style="display: none;">
-            <p class="subtitle" style="margin-bottom: 14px;">Unggah file video, lalu ekstrak track audionya saja menjadi MP3 kualitas jernih. Video asli dibuang, hanya suaranya yang disimpan.</p>
+                    <p class="panel-subtitle">
+                        Ekstrak trek suara murni dari berkas video menjadi format MP3 jernih dengan kontrol bitrate variabel profesional.
+                    </p>
 
-            <div class="dropzone" id="audioDropzone" onclick="document.getElementById('audioFileInput').click()">
-                <div id="audioDropText">Pilih / Seret Video ke Sini (MP4, MOV, WEBM, MKV)</div>
-                <input type="file" id="audioFileInput" accept="video/*,.mp4,.mov,.webm,.mkv,.avi">
+                    <div class="dropzone" id="audioDropzone" onclick="document.getElementById('audioFileInput').click()">
+                        <div class="dropzone-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                        </div>
+                        <div class="dropzone-text-primary" id="audioDropText">Pilih atau seret berkas video ke sini</div>
+                        <div class="dropzone-text-sub">Mendukung MP4, MOV, WEBM, MKV, AVI</div>
+                        <input type="file" id="audioFileInput" accept="video/*,.mp4,.mov,.webm,.mkv,.avi">
+                    </div>
+
+                    <div id="audioBeforeBox" class="preview-box">
+                        <div class="preview-header-bar">Preview Video Sumber</div>
+                        <div class="preview-media-frame">
+                            <video id="audioBeforeVid" class="preview-media" style="display: none;" controls playsinline></video>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">KUALITAS BITRATE MP3</div>
+                    <div class="quality-grid" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="quality-card active" data-abitrate="high" onclick="setAudioBitrate('high')">
+                            <div class="quality-name">Studio VBR</div>
+                            <div class="quality-sub">~245 kbps (Tertinggi)</div>
+                        </div>
+                        <div class="quality-card" data-abitrate="medium" onclick="setAudioBitrate('medium')">
+                            <div class="quality-name">High VBR</div>
+                            <div class="quality-sub">~190 kbps (Seimbang)</div>
+                        </div>
+                        <div class="quality-card" data-abitrate="standard" onclick="setAudioBitrate('standard')">
+                            <div class="quality-name">Standard CBR</div>
+                            <div class="quality-sub">192 kbps (Standar)</div>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" id="audioBtn" onclick="startAudioExtract()" disabled>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                        Ekstrak Trek Audio ke MP3
+                    </button>
+
+                    <div class="status-box" id="audioStatus"></div>
+                    <div class="progress-wrap" id="audioProgressWrap"><div class="progress-bar" id="audioProgressBar">0%</div></div>
+                    <div class="vmeta" id="audioMeta"></div>
+
+                    <div id="audioAfterBox" class="preview-box" style="margin-top: 18px; border-color: rgba(16, 185, 129, 0.3);">
+                        <div class="preview-header-bar" style="color: var(--color-success);">
+                            <span>✓ Ekstraksi MP3 Selesai</span>
+                        </div>
+                        <div style="padding: 18px;">
+                            <audio id="audioAfterPlayer" style="display: none; width: 100%;" controls></audio>
+                        </div>
+                        <a id="audioDownloadLink" class="btn-success" style="margin-top: 14px; display: none;" download>
+                            Unduh MP3
+                        </a>
+                    </div>
+                </div>
             </div>
+        </main>
 
-            <div id="audioBeforeBox" class="preview-box">
-                <div class="preview-title">👁 Preview Video Sumber</div>
-                <video id="audioBeforeVid" class="preview-media" style="display: none;" controls playsinline></video>
-            </div>
-
-            <p style="margin: 0 0 6px 0; font-size: 12.5px; color: #9ca3af; text-align: center;">Kualitas MP3</p>
-            <div class="mode-tabs" style="margin-bottom: 14px;">
-                <div class="mode-tab active" data-abitrate="high" onclick="setAudioBitrate('high')">Tinggi (~245kbps)</div>
-                <div class="mode-tab" data-abitrate="medium" onclick="setAudioBitrate('medium')">Medium (~190kbps)</div>
-                <div class="mode-tab" data-abitrate="standard" onclick="setAudioBitrate('standard')">Standar (192kbps)</div>
-            </div>
-
-            <button class="btn" id="audioBtn" onclick="startAudioExtract()" disabled>Extract Audio ke MP3</button>
-            <div class="status" id="audioStatus"></div>
-            <div class="progress-wrap" id="audioProgressWrap"><div class="progress-bar" id="audioProgressBar">0%</div></div>
-            <div class="vmeta" id="audioMeta"></div>
-
-            <!-- Preview hasil MP3 -->
-            <div id="audioAfterBox" class="preview-box" style="margin-top: 18px; border-color: #059669;">
-                <div class="preview-title" style="color: #34d399;">✓ Hasil MP3</div>
-                <audio id="audioAfterPlayer" style="display: none; width: 100%;" controls></audio>
-            </div>
-
-            <a id="audioDownloadLink" class="download-btn" download>Unduh MP3</a>
-        </div>
+        <footer class="app-footer">
+            Clean-Meta Studio • Precision Media Forensics & Metadata Sanitizer • Crafted with precision by <a href="https://github.com/BDwicky" target="_blank" rel="noopener">Bagus Dwicy Primananda</a>
+        </footer>
     </div>
 
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
     <script>
-        // PIN Gate - Server Verified
+        // Security Gate - Server Verified PIN
         const pinModal = document.getElementById('pinModal');
+        const pinCard = document.getElementById('pinCard');
         const pinInput = document.getElementById('pinInput');
         const pinError = document.getElementById('pinError');
         const appCard = document.getElementById('appCard');
@@ -428,6 +1726,9 @@
                     body: JSON.stringify({ pin: pin })
                 });
                 const data = await res.json();
+                if (data.success && data.token) {
+                    try { localStorage.setItem('clean_auth_token', data.token); } catch (e) {}
+                }
                 return data.success;
             } catch (err) {
                 return false;
@@ -440,28 +1741,44 @@
             const ok = await verifyPinOnServer(entered);
             if (ok) {
                 pinModal.style.display = 'none';
-                appCard.style.display = 'block';
+                appCard.style.display = 'flex';
                 pinError.style.display = 'none';
             } else {
                 pinError.style.display = 'block';
+                pinCard.classList.remove('shake');
+                void pinCard.offsetWidth; // trigger reflow
+                pinCard.classList.add('shake');
                 pinInput.value = '';
                 pinInput.focus();
             }
         }
 
-        // Cek apakah cookie sesi sudah valid dengan request test ke endpoint
+        function lockSession() {
+            // Clear session cookie and local token, then show PIN gate
+            document.cookie = "clean_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            try { localStorage.removeItem('clean_auth_token'); } catch (e) {}
+            appCard.style.display = 'none';
+            pinModal.style.display = 'flex';
+            pinInput.value = '';
+            pinError.style.display = 'none';
+            setTimeout(() => { if (pinInput) pinInput.focus(); }, 100);
+        }
+
+        // Check authentication state on page load
         async function initAuthCheck() {
+            const token = localStorage.getItem('clean_auth_token') || '';
             try {
-                const res = await fetch('/api/clean', { method: 'POST' });
-                // Jika 401 Unauthorized, berarti belum login
+                const res = await fetch('/api/clean', {
+                    method: 'POST',
+                    headers: { 'X-Auth-Token': token }
+                });
                 if (res.status === 401) {
                     pinModal.style.display = 'flex';
                     appCard.style.display = 'none';
                     setTimeout(() => { if (pinInput) pinInput.focus(); }, 100);
                 } else {
-                    // Berarti sudah terautentikasi (cookie valid)
                     pinModal.style.display = 'none';
-                    appCard.style.display = 'block';
+                    appCard.style.display = 'flex';
                 }
             } catch (e) {
                 pinModal.style.display = 'flex';
@@ -470,6 +1787,7 @@
         }
         initAuthCheck();
 
+        // ================= MEDIA CLEANER ENGINE =================
         let mode = 'image';   // 'image' | 'video'
         let file = null;
         let pollTimer = null;
@@ -477,6 +1795,14 @@
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('fileInput');
         const dropText = document.getElementById('dropText');
+        const fileMetaCard = document.getElementById('fileMetaCard');
+        const selectedFileName = document.getElementById('selectedFileName');
+        const selectedFileSize = document.getElementById('selectedFileSize');
+        const fileBadgeIcon = document.getElementById('fileBadgeIcon');
+        const pipelineLabel = document.getElementById('pipelineLabel');
+        const outputBadge = document.getElementById('outputBadge');
+        const emptySpecCard = document.getElementById('emptySpecCard');
+
         const statusEl = document.getElementById('status');
         const uploadBtn = document.getElementById('uploadBtn');
         const dl = document.getElementById('downloadLink');
@@ -492,7 +1818,6 @@
         const afterVid = document.getElementById('afterVidPreview');
 
         let previewObjectUrl = null;
-        let afterObjectUrl = null;
 
         function showBeforePreview(selectedFile) {
             if (previewObjectUrl) {
@@ -513,12 +1838,12 @@
             previewObjectUrl = URL.createObjectURL(selectedFile);
             if (selectedFile.type.startsWith('image/') || mode === 'image') {
                 beforeImg.src = previewObjectUrl;
-                beforeImg.style.display = 'inline-block';
+                beforeImg.style.display = 'block';
                 beforeVid.pause();
                 beforeVid.style.display = 'none';
             } else {
                 beforeVid.src = previewObjectUrl;
-                beforeVid.style.display = 'inline-block';
+                beforeVid.style.display = 'block';
                 beforeImg.style.display = 'none';
             }
             beforeBox.style.display = 'block';
@@ -527,21 +1852,25 @@
         function showAfterPreview(url, isVideo) {
             if (isVideo) {
                 afterVid.src = url;
-                afterVid.style.display = 'inline-block';
+                afterVid.style.display = 'block';
                 afterImg.style.display = 'none';
             } else {
                 afterImg.src = url;
-                afterImg.style.display = 'inline-block';
+                afterImg.style.display = 'block';
                 afterVid.style.display = 'none';
                 afterVid.pause();
             }
             afterBox.style.display = 'block';
+            emptySpecCard.style.display = 'none';
         }
 
         function applyModeUI(m) {
             mode = m;
             document.getElementById('tabImage').classList.toggle('active', m === 'image');
             document.getElementById('tabVideo').classList.toggle('active', m === 'video');
+            document.getElementById('subModeImage').classList.toggle('active', m === 'image');
+            document.getElementById('subModeVideo').classList.toggle('active', m === 'video');
+            pipelineLabel.innerText = m === 'image' ? 'Mode: Foto (Bit-Exact)' : 'Mode: Video (Stream Copy)';
             fileInput.accept = (m === 'image') ? 'image/*' : 'video/*,.mp4,.mov,.webm,.mkv,.avi';
         }
 
@@ -551,49 +1880,56 @@
             if (t.startsWith('video/')) return 'video';
             const ext = (f.name || '').split('.').pop().toLowerCase();
             if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) return 'image';
-            if (['mp4', 'mov', 'webm', 'mkv'].includes(ext)) return 'video';
+            if (['mp4', 'mov', 'webm', 'mkv', 'avi'].includes(ext)) return 'video';
             return null;
         }
 
         function handleFileSelected(f) {
             const detected = detectFileType(f);
             if (!detected) {
-                statusEl.style.color = '#f87171';
-                statusEl.innerText = 'Format file tidak dikenali. Gunakan foto (JPG, PNG, WEBP) atau video (MP4, MOV, WEBM, MKV).';
+                statusEl.style.color = '#ef4444';
+                statusEl.innerText = 'Format berkas tidak dikenali. Gunakan foto (JPG, PNG, WEBP) atau video (MP4, MOV, WEBM, MKV).';
                 file = null;
                 showBeforePreview(null);
+                fileMetaCard.style.display = 'none';
                 return;
             }
             applyModeUI(detected);
             file = f;
-            const typeLabel = detected === 'image' ? 'Foto' : 'Video';
-            dropText.innerText = '✓ ' + typeLabel + ' terdeteksi: ' + f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' MB)';
+
+            const sizeMb = (f.size / (1024 * 1024)).toFixed(2);
+            selectedFileName.innerText = f.name;
+            selectedFileSize.innerText = `${sizeMb} MB • ${detected === 'image' ? 'Foto' : 'Video'}`;
+            fileMetaCard.style.display = 'flex';
+            dropzone.style.display = 'none';
+
             showBeforePreview(f);
             if (afterBox) afterBox.style.display = 'none';
             statusEl.innerHTML = '';
+            outputBadge.innerText = 'Siap Memproses';
+            outputBadge.style.color = 'var(--text-secondary)';
+        }
+
+        function clearSelectedFile(e) {
+            if (e) e.stopPropagation();
+            file = null;
+            fileInput.value = '';
+            fileMetaCard.style.display = 'none';
+            dropzone.style.display = 'block';
+            showBeforePreview(null);
+            resetUI();
         }
 
         function setMode(m) {
             applyModeUI(m);
             showSection('cleaner');
-            // Jika file yang sedang dipilih cocok dengan tab yang diklik,
-            // pertahankan file & preview-nya (tidak di-reset)
             if (file) {
                 const detected = detectFileType(file);
                 if (detected === m) {
                     return;
                 }
             }
-            fileInput.value = '';
-            file = null;
-            showBeforePreview(null);
-            if (afterBox) afterBox.style.display = 'none';
-            dropText.innerText = 'Pilih / Seret Foto atau Video ke Sini (Auto-Detect)';
-            statusEl.innerHTML = '';
-            progressWrap.style.display = 'none';
-            vmetaEl.style.display = 'none';
-            dl.style.display = 'none';
-            logBox.style.display = 'none';
+            clearSelectedFile();
         }
 
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
@@ -634,9 +1970,7 @@
             if (dt && dt.files && dt.files.length > 0) {
                 try {
                     fileInput.files = dt.files;
-                } catch (err) {
-                    /* browser bisa menolak assign; file variable sudah di-set manual */
-                }
+                } catch (err) {}
                 handleFileSelected(dt.files[0]);
             }
         });
@@ -648,24 +1982,42 @@
             vmetaEl.style.display = 'none';
             dl.style.display = 'none';
             logBox.style.display = 'none';
+            emptySpecCard.style.display = 'block';
             if (afterBox) afterBox.style.display = 'none';
         }
 
         function renderReport(report, exifTitle) {
             document.getElementById('exifTitle').innerText = exifTitle;
-            const removedUl = document.getElementById('removedList');
-            removedUl.innerHTML = '';
-            (report.removed_items || []).forEach(item => {
-                const li = document.createElement('li');
-                li.innerText = item;
-                removedUl.appendChild(li);
-            });
+            const removedContainer = document.getElementById('removedContainer');
+            const removedCount = document.getElementById('removedCount');
+            removedContainer.innerHTML = '';
+
+            const items = report.removed_items || [];
+            removedCount.innerText = items.length;
+
+            if (items.length > 0) {
+                const tagDiv = document.createElement('div');
+                tagDiv.className = 'tag-pill-list';
+                items.forEach(item => {
+                    const span = document.createElement('span');
+                    span.className = 'tag-pill';
+                    span.innerText = item;
+                    tagDiv.appendChild(span);
+                });
+                removedContainer.appendChild(tagDiv);
+            } else {
+                const emptyP = document.createElement('p');
+                emptyP.style.color = 'var(--text-muted)';
+                emptyP.style.fontSize = '12.5px';
+                emptyP.innerText = 'Tidak ada tag berisiko yang terdeteksi.';
+                removedContainer.appendChild(emptyP);
+            }
 
             const modUl = document.getElementById('modList');
             modUl.innerHTML = '';
             (report.modifications || []).forEach(m => {
                 const li = document.createElement('li');
-                li.innerHTML = '<strong>' + m.stage + ':</strong> ' + m.action;
+                li.innerHTML = '<strong style="color: var(--text-primary);">' + m.stage + ':</strong> ' + m.action;
                 modUl.appendChild(li);
             });
 
@@ -677,54 +2029,69 @@
                 exifTbl.appendChild(tr);
             });
 
+            emptySpecCard.style.display = 'none';
             logBox.style.display = 'block';
         }
 
         async function processImage() {
-            statusEl.style.color = '#38bdf8';
-            statusEl.innerHTML = 'Sedang membersihkan metadata & menyuntikkan EXIF kamera...';
+            statusEl.style.color = '#818cf8';
+            statusEl.innerText = 'Membersihkan metadata AI & menyuntikkan profil optik Apple...';
 
             const formData = new FormData();
             formData.append('image', file);
 
-            const res = await fetch('/api/clean', { method: 'POST', body: formData });
+            const res = await fetch('/api/clean', {
+                method: 'POST',
+                headers: { 'X-Auth-Token': localStorage.getItem('clean_auth_token') || '' },
+                body: formData
+            });
             const data = await res.json();
             if (data.success) {
-                statusEl.style.color = '#34d399';
-                statusEl.innerText = '✓ Selesai! Metadata bersih & EXIF disuntik (kualitas 100% utuh).';
+                statusEl.style.color = 'var(--color-success)';
+                statusEl.innerText = '✓ Selesai. Metadata AI dibersihkan & EXIF disuntikkan.';
+                outputBadge.innerText = '✓ Selesai & Terverifikasi';
+                outputBadge.style.color = 'var(--color-success)';
                 dl.href = data.download_url;
-                dl.innerText = 'Unduh Hasil (' + data.filename + ')';
-                dl.style.display = 'block';
+                dl.innerText = 'Unduh Hasil Sanitasi (' + data.filename + ')';
+                dl.style.display = 'flex';
                 showAfterPreview(data.download_url, false);
                 renderReport(data.report, '[3] Metadata Kamera Asli yang Disuntikkan (EXIF)');
             } else {
-                statusEl.style.color = '#f87171';
-                statusEl.innerText = 'Gagal: ' + (data.error || 'Terjadi kesalahan');
+                statusEl.style.color = '#ef4444';
+                statusEl.innerText = 'Gagal: ' + (data.error || 'Terjadi kesalahan sistem');
+                outputBadge.innerText = 'Gagal';
+                outputBadge.style.color = '#ef4444';
             }
         }
 
         async function processVideo() {
-            statusEl.style.color = '#38bdf8';
-            statusEl.innerHTML = 'Mengunggah & menganalisis video...';
+            statusEl.style.color = '#818cf8';
+            statusEl.innerText = 'Mengunggah & menganalisis container video...';
 
             const formData = new FormData();
             formData.append('video', file);
 
-            const res = await fetch('/api/clean-video', { method: 'POST', body: formData });
+            const res = await fetch('/api/clean-video', {
+                method: 'POST',
+                headers: { 'X-Auth-Token': localStorage.getItem('clean_auth_token') || '' },
+                body: formData
+            });
             const data = await res.json();
 
             if (!data.success) {
-                statusEl.style.color = '#f87171';
-                statusEl.innerText = 'Gagal: ' + (data.error || 'Terjadi kesalahan');
+                statusEl.style.color = '#ef4444';
+                statusEl.innerText = 'Gagal: ' + (data.error || 'Terjadi kesalahan sistem');
+                outputBadge.innerText = 'Gagal';
+                outputBadge.style.color = '#ef4444';
                 return;
             }
 
             progressWrap.style.display = 'block';
-            statusEl.innerHTML = 'Membersihkan metadata video (lossless stream copy)...';
+            statusEl.innerText = 'Menjalankan lossless stream copy (-c copy)...';
 
             const fmtMeta = (m) => (m ? ('Durasi: ' + (m.duration || 0).toFixed(1) + 's — ' +
                 m.resolution + ' @ ' + m.fps + 'fps — Audio: ' +
-                (m.has_audio ? 'ya (disalin tanpa re-encode)' : 'tidak')) : '');
+                (m.has_audio ? 'Stream Copy (Utuh)' : 'Tidak ada')) : '');
 
             pollTimer = setInterval(async () => {
                 try {
@@ -740,30 +2107,34 @@
                     if (sdata.status === 'done') {
                         clearInterval(pollTimer);
                         progressWrap.style.display = 'none';
-                        statusEl.style.color = '#34d399';
-                        statusEl.innerText = '✓ Video berhasil diproses!';
+                        statusEl.style.color = 'var(--color-success)';
+                        statusEl.innerText = '✓ Video berhasil disanitasi secara lossless!';
+                        outputBadge.innerText = '✓ Selesai & Terverifikasi';
+                        outputBadge.style.color = 'var(--color-success)';
                         dl.href = sdata.download_url;
                         dl.innerText = 'Unduh Video Bersih (' + sdata.filename + ')';
-                        dl.style.display = 'block';
+                        dl.style.display = 'flex';
                         showAfterPreview(sdata.download_url, true);
                         renderReport(sdata.report, '[3] Metadata Kamera Asli yang Disuntikkan (QuickTime/EXIF)');
                     } else if (sdata.status === 'error') {
                         clearInterval(pollTimer);
                         progressWrap.style.display = 'none';
-                        statusEl.style.color = '#f87171';
+                        statusEl.style.color = '#ef4444';
                         statusEl.innerText = 'Gagal: ' + (sdata.error || 'kesalahan pemrosesan');
+                        outputBadge.innerText = 'Gagal';
+                        outputBadge.style.color = '#ef4444';
                     }
-                } catch (err) { /* keep polling */ }
-            }, 1500);
+                } catch (err) {}
+            }, 1200);
         }
 
         async function processFile() {
             if (!file) {
-                alert(mode === 'image' ? 'Silakan pilih foto terlebih dahulu!' : 'Silakan pilih video terlebih dahulu!');
+                alert(mode === 'image' ? 'Silakan pilih atau seret foto terlebih dahulu!' : 'Silakan pilih atau seret video terlebih dahulu!');
                 return;
             }
             if (mode === 'video' && file.size > 200 * 1024 * 1024) {
-                alert('Ukuran video maksimal 200MB.');
+                alert('Ukuran video melebihi batas 200MB.');
                 return;
             }
             uploadBtn.disabled = true;
@@ -772,8 +2143,8 @@
                 if (mode === 'image') await processImage();
                 else await processVideo();
             } catch (err) {
-                statusEl.style.color = '#f87171';
-                statusEl.innerText = 'Error menghubungi server.';
+                statusEl.style.color = '#ef4444';
+                statusEl.innerText = 'Kesalahan saat menghubungi server.';
             } finally {
                 uploadBtn.disabled = false;
             }
@@ -781,8 +2152,11 @@
 
         // ================= YOUTUBE DOWNLOADER =================
         let ytMode = 'video';
-        let ytQuality = 720;
+        let ytQuality = 1080;
         let ytPollTimer = null;
+        let ytInfoTimer = null;
+        let lastInspectedUrl = '';
+        const DEFAULT_RESOLUTIONS = [360, 480, 720, 1080, 1440, 2160];
 
         const ytUrlInput = document.getElementById('ytUrl');
         const ytBtn = document.getElementById('ytBtn');
@@ -794,9 +2168,160 @@
         const ytVidPreview = document.getElementById('ytVidPreview');
         const ytAudioPreview = document.getElementById('ytAudioPreview');
         const ytDl = document.getElementById('ytDownloadLink');
+        const ytInfoCard = document.getElementById('ytInfoCard');
+        const ytInfoThumb = document.getElementById('ytInfoThumb');
+        const ytInfoDuration = document.getElementById('ytInfoDuration');
+        const ytInfoTitle = document.getElementById('ytInfoTitle');
+        const ytInfoChannel = document.getElementById('ytInfoChannel');
+        const ytInfoMaxRes = document.getElementById('ytInfoMaxRes');
+        const ytQualityGrid = document.getElementById('ytQualityGrid');
+        const ytResStatus = document.getElementById('ytResStatus');
+
+        function extractYoutubeUrl(raw) {
+            if (!raw) return '';
+            raw = raw.trim();
+            // Handle links shared from apps with prefix text (e.g. "Check out this video: https://youtu.be/...")
+            const m = raw.match(/https?:\/\/[^\s"'<>]+/i);
+            if (m) {
+                return m[0].replace(/[.,;)>\]]+$/, '');
+            }
+            // Handle links pasted without protocol (e.g. youtu.be/... or youtube.com/watch?v=...)
+            if (/^(www\.|m\.|music\.)?(youtube\.com|youtu\.be)\//i.test(raw)) {
+                return 'https://' + raw;
+            }
+            return raw;
+        }
+
+        function isLikelyYoutubeUrl(url) {
+            if (!url) return false;
+            return /^https?:\/\/([a-zA-Z0-9_-]+\.)?(youtube\.com|youtu\.be)\//i.test(url);
+        }
+
+        async function pasteYtUrl() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    const cleaned = extractYoutubeUrl(text);
+                    ytUrlInput.value = cleaned || text.trim();
+                    inspectYoutubeUrl(true);
+                }
+            } catch (e) {
+                ytUrlInput.focus();
+            }
+        }
+
+        ytUrlInput.addEventListener('input', () => {
+            clearTimeout(ytInfoTimer);
+            ytInfoTimer = setTimeout(() => {
+                inspectYoutubeUrl();
+            }, 600);
+        });
+
+        const RESOLUTION_META = {
+            144: { name: '144p', sub: 'Sangat Rendah' },
+            240: { name: '240p', sub: 'Rendah' },
+            360: { name: '360p', sub: 'Hemat Kuota' },
+            480: { name: '480p', sub: 'SD Standar' },
+            720: { name: '720p', sub: 'HD Standar' },
+            1080: { name: '1080p', sub: 'Full HD' },
+            1440: { name: '1440p', sub: '2K QHD' },
+            2160: { name: '4K', sub: 'Ultra HD' }
+        };
+
+        function renderResolutionGrid(resolutions, selectedQ, hasEnhanced = false) {
+            if (!ytQualityGrid) return;
+            ytQualityGrid.innerHTML = '';
+            if (!resolutions || resolutions.length === 0) {
+                resolutions = DEFAULT_RESOLUTIONS;
+            }
+
+            const maxQ = Math.max(...resolutions);
+            resolutions.forEach(q => {
+                const card = document.createElement('div');
+                card.className = 'quality-card' + (q === selectedQ ? ' active' : '');
+                card.setAttribute('data-ytq', q);
+                card.onclick = () => setYtQuality(q);
+
+                const meta = RESOLUTION_META[q] || { name: q + 'p', sub: q + 'p' };
+                let subText = meta.sub;
+                if (q === 1080 && hasEnhanced) {
+                    subText = 'Full HD (Enhanced Bitrate)';
+                } else if (q === maxQ) {
+                    subText = subText + ' (Maks)';
+                }
+
+                card.innerHTML = `<div class="quality-name">${meta.name}</div><div class="quality-sub">${subText}</div>`;
+                ytQualityGrid.appendChild(card);
+            });
+        }
+
+        async function inspectYoutubeUrl(immediate = false) {
+            const raw = ytUrlInput.value.trim();
+            const url = extractYoutubeUrl(raw);
+            if (!url || !isLikelyYoutubeUrl(url)) {
+                if (ytInfoCard) ytInfoCard.style.display = 'none';
+                if (ytResStatus) ytResStatus.innerText = 'Pilih resolusi target (1080p / 720p / 4K)';
+                renderResolutionGrid(DEFAULT_RESOLUTIONS, ytQuality || 1080);
+                lastInspectedUrl = '';
+                return;
+            }
+
+            if (url === lastInspectedUrl && !immediate) {
+                return;
+            }
+
+            lastInspectedUrl = url;
+            if (ytResStatus) ytResStatus.innerHTML = '<span style="color: #818cf8;">Menganalisis resolusi video YouTube...</span>';
+
+            try {
+                const res = await fetch('/api/youtube-info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Auth-Token': localStorage.getItem('clean_auth_token') || ''
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                if (res.status === 401) {
+                    lockSession();
+                    return;
+                }
+
+                let data = null;
+                try {
+                    data = await res.json();
+                } catch (pe) {
+                    data = { success: false, error: 'Respons server tidak valid' };
+                }
+
+                if (data.success) {
+                    if (ytInfoCard) ytInfoCard.style.display = 'flex';
+                    if (ytInfoThumb) ytInfoThumb.src = data.thumbnail || '';
+                    if (ytInfoDuration) ytInfoDuration.innerText = data.duration_str || '00:00';
+                    if (ytInfoTitle) ytInfoTitle.innerText = data.title || 'Video YouTube';
+                    if (ytInfoChannel) ytInfoChannel.innerText = data.uploader || '';
+                    const maxH = data.max_resolution || 1080;
+                    const enhLabel = data.has_1080_enhanced ? ' (Enhanced Bitrate)' : '';
+                    if (ytInfoMaxRes) ytInfoMaxRes.innerText = `Maks ${maxH}p` + (maxH >= 720 ? ' HD' : '') + enhLabel;
+
+                    const resolutions = (data.resolutions && data.resolutions.length > 0) ? data.resolutions : DEFAULT_RESOLUTIONS;
+                    if (ytResStatus) ytResStatus.innerText = `Terdeteksi ${resolutions.length} resolusi asli` + enhLabel;
+
+                    const autoChoice = resolutions.includes(1080) ? 1080 : Math.max(...resolutions);
+                    ytQuality = autoChoice;
+                    renderResolutionGrid(resolutions, autoChoice, data.has_1080_enhanced);
+                } else {
+                    if (ytResStatus) ytResStatus.innerHTML = '<span style="color: #fbbf24;">Deteksi otomatis tidak merespons — Anda tetap bisa memilih 1080p / 720p manual di bawah.</span>';
+                    renderResolutionGrid(DEFAULT_RESOLUTIONS, ytQuality || 1080);
+                }
+            } catch (err) {
+                if (ytResStatus) ytResStatus.innerHTML = '<span style="color: #fbbf24;">Info otomatis sedang tertunda — Pilihan 1080p / 720p tetap aktif untuk diunduh langsung.</span>';
+                renderResolutionGrid(DEFAULT_RESOLUTIONS, ytQuality || 1080);
+            }
+        }
 
         function showSection(section) {
-            // Pause semua media preview di section lain saat berpindah tab
             if (section !== 'cleaner') {
                 try { beforeVid.pause(); afterVid.pause(); } catch (e) {}
             }
@@ -806,9 +2331,11 @@
             if (section !== 'audio') {
                 try { audioBeforeVid.pause(); audioAfterPlayer.pause(); } catch (e) {}
             }
+
             document.getElementById('sectionCleaner').style.display = (section === 'youtube' || section === 'audio') ? 'none' : 'block';
             document.getElementById('sectionYouTube').style.display = (section === 'youtube') ? 'block' : 'none';
             document.getElementById('sectionAudioExtract').style.display = (section === 'audio') ? 'block' : 'none';
+
             document.getElementById('tabImage').classList.toggle('active', section === 'cleaner' && mode === 'image');
             document.getElementById('tabVideo').classList.toggle('active', section === 'cleaner' && mode === 'video');
             document.getElementById('tabYouTube').classList.toggle('active', section === 'youtube');
@@ -830,14 +2357,25 @@
         }
 
         async function startYoutubeDownload() {
-            const url = ytUrlInput.value.trim();
+            const rawUrl = ytUrlInput.value.trim();
+            const url = extractYoutubeUrl(rawUrl);
             if (!url) {
                 alert('Masukkan URL YouTube terlebih dahulu!');
+                ytUrlInput.focus();
                 return;
             }
+            if (url !== rawUrl) {
+                ytUrlInput.value = url;
+            }
+
+            if (ytPollTimer) {
+                clearInterval(ytPollTimer);
+                ytPollTimer = null;
+            }
+
             ytBtn.disabled = true;
-            ytStatus.style.color = '#38bdf8';
-            ytStatus.innerText = 'Menghubungi server & memulai unduhan...';
+            ytStatus.style.color = '#818cf8';
+            ytStatus.innerText = 'Menginisialisasi pipeline unduhan...';
             ytProgressWrap.style.display = 'block';
             ytProgressBar.style.width = '0%';
             ytProgressBar.innerText = '0%';
@@ -848,23 +2386,56 @@
             try {
                 const res = await fetch('/api/youtube-download', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url, mode: ytMode, quality: ytQuality })
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Auth-Token': localStorage.getItem('clean_auth_token') || ''
+                    },
+                    body: JSON.stringify({ url: url, mode: ytMode, quality: ytQuality || 720 })
                 });
-                const data = await res.json();
-                if (!data.success) {
-                    ytStatus.style.color = '#f87171';
-                    ytStatus.innerText = 'Gagal: ' + (data.error || 'Terjadi kesalahan');
+
+                if (res.status === 401) {
+                    ytStatus.style.color = '#ef4444';
+                    ytStatus.innerText = 'Sesi PIN telah kedaluwarsa. Silakan masukkan PIN kembali.';
+                    ytProgressWrap.style.display = 'none';
+                    ytBtn.disabled = false;
+                    lockSession();
+                    return;
+                }
+
+                let data = null;
+                try {
+                    data = await res.json();
+                } catch (parseErr) {
+                    throw new Error(`Server error (${res.status}: ${res.statusText || 'Gagal memproses respons'})`);
+                }
+
+                if (!res.ok || !data.success) {
+                    ytStatus.style.color = '#ef4444';
+                    ytStatus.innerText = 'Gagal: ' + (data.error || `Kesalahan server (${res.status})`);
                     ytProgressWrap.style.display = 'none';
                     ytBtn.disabled = false;
                     return;
                 }
 
-                ytStatus.innerText = 'Mengunduh...';
+                ytStatus.innerText = 'Mengunduh stream dari YouTube...';
+                let pollFailCount = 0;
+
                 ytPollTimer = setInterval(async () => {
                     try {
-                        const sres = await fetch('/api/youtube-status/' + data.job_id);
+                        const sres = await fetch('/api/youtube-status/' + data.job_id, {
+                            headers: { 'X-Auth-Token': localStorage.getItem('clean_auth_token') || '' }
+                        });
+
+                        if (sres.status === 401) {
+                            clearInterval(ytPollTimer);
+                            ytPollTimer = null;
+                            ytStatus.innerText = 'Sesi berakhir.';
+                            lockSession();
+                            return;
+                        }
+
                         const sdata = await sres.json();
+                        pollFailCount = 0;
 
                         ytProgressBar.style.width = (sdata.progress || 0) + '%';
                         ytProgressBar.innerText = (sdata.progress || 0) + '%';
@@ -874,19 +2445,20 @@
                         }
 
                         if (sdata.status === 'downloading') {
-                            ytStatus.style.color = '#38bdf8';
-                            ytStatus.innerText = 'Mengunduh dari YouTube...';
+                            ytStatus.style.color = '#818cf8';
+                            ytStatus.innerText = 'Mengunduh stream...';
                         } else if (sdata.status === 'processing') {
                             ytStatus.style.color = '#fbbf24';
-                            ytStatus.innerText = 'Menggabungkan stream & membersihkan metadata...';
+                            ytStatus.innerText = 'Menggabungkan stream video dan audio...';
                         } else if (sdata.status === 'done') {
                             clearInterval(ytPollTimer);
+                            ytPollTimer = null;
                             ytProgressWrap.style.display = 'none';
-                            ytStatus.style.color = '#34d399';
-                            ytStatus.innerText = '✓ Selesai!' + (sdata.title ? ' "' + sdata.title + '"' : '');
+                            ytStatus.style.color = 'var(--color-success)';
+                            ytStatus.innerText = '✓ Selesai!' + (sdata.title ? ' ' + sdata.title : '');
                             ytDl.href = sdata.download_url;
-                            ytDl.innerText = 'Unduh File (' + sdata.filename + ')';
-                            ytDl.style.display = 'block';
+                            ytDl.innerText = 'Unduh Berkas (' + sdata.filename + ')';
+                            ytDl.style.display = 'flex';
 
                             const isAudio = sdata.filename.endsWith('.m4a') || sdata.filename.endsWith('.mp3');
                             if (isAudio) {
@@ -895,23 +2467,33 @@
                                 ytVidPreview.style.display = 'none';
                             } else {
                                 ytVidPreview.src = sdata.download_url;
-                                ytVidPreview.style.display = 'inline-block';
+                                ytVidPreview.style.display = 'block';
                                 ytAudioPreview.style.display = 'none';
                             }
                             ytAfterBox.style.display = 'block';
                             ytBtn.disabled = false;
                         } else if (sdata.status === 'error') {
                             clearInterval(ytPollTimer);
+                            ytPollTimer = null;
                             ytProgressWrap.style.display = 'none';
-                            ytStatus.style.color = '#f87171';
+                            ytStatus.style.color = '#ef4444';
                             ytStatus.innerText = 'Gagal: ' + (sdata.error || 'kesalahan unduhan');
                             ytBtn.disabled = false;
                         }
-                    } catch (err) { /* keep polling */ }
-                }, 1500);
+                    } catch (err) {
+                        pollFailCount++;
+                        if (pollFailCount > 8) {
+                            clearInterval(ytPollTimer);
+                            ytPollTimer = null;
+                            ytStatus.style.color = '#ef4444';
+                            ytStatus.innerText = 'Pemantauan terputus (koneksi tidak stabil). Berkas mungkin masih diproses di latar belakang.';
+                            ytBtn.disabled = false;
+                        }
+                    }
+                }, 1200);
             } catch (err) {
-                ytStatus.style.color = '#f87171';
-                ytStatus.innerText = 'Error menghubungi server.';
+                ytStatus.style.color = '#ef4444';
+                ytStatus.innerText = 'Kesalahan saat menghubungi server: ' + (err.message || 'Periksa koneksi Anda.');
                 ytProgressWrap.style.display = 'none';
                 ytBtn.disabled = false;
             }
@@ -957,7 +2539,7 @@
             }
             audioPreviewUrl = URL.createObjectURL(f);
             audioBeforeVid.src = audioPreviewUrl;
-            audioBeforeVid.style.display = 'inline-block';
+            audioBeforeVid.style.display = 'block';
             audioBeforeBox.style.display = 'block';
         }
 
@@ -965,15 +2547,15 @@
             const isVideo = (f.type || '').startsWith('video/') ||
                 ['mp4', 'mov', 'webm', 'mkv', 'avi'].includes((f.name || '').split('.').pop().toLowerCase());
             if (!isVideo) {
-                audioStatus.style.color = '#f87171';
-                audioStatus.innerText = 'Format tidak dikenali. Gunakan file video (MP4, MOV, WEBM, MKV).';
+                audioStatus.style.color = '#ef4444';
+                audioStatus.innerText = 'Format berkas tidak dikenali. Gunakan file video (MP4, MOV, WEBM, MKV).';
                 audioFile = null;
                 audioBtn.disabled = true;
                 showAudioBeforePreview(null);
                 return;
             }
             audioFile = f;
-            audioDropText.innerText = '✓ Video terdeteksi: ' + f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' MB)';
+            audioDropText.innerText = '✓ ' + f.name + ' (' + (f.size / (1024 * 1024)).toFixed(1) + ' MB)';
             showAudioBeforePreview(f);
             audioBtn.disabled = false;
             audioStatus.innerHTML = '';
@@ -1019,8 +2601,8 @@
                 return;
             }
             audioBtn.disabled = true;
-            audioStatus.style.color = '#38bdf8';
-            audioStatus.innerText = 'Mengunggah video...';
+            audioStatus.style.color = '#818cf8';
+            audioStatus.innerText = 'Mengunggah video sumber...';
             audioProgressWrap.style.display = 'block';
             audioProgressBar.style.width = '0%';
             audioProgressBar.innerText = '0%';
@@ -1033,21 +2615,35 @@
                 formData.append('video', audioFile);
                 formData.append('bitrate', audioBitrate);
 
-                const res = await fetch('/api/extract-audio', { method: 'POST', body: formData });
+                const res = await fetch('/api/extract-audio', {
+                    method: 'POST',
+                    headers: { 'X-Auth-Token': localStorage.getItem('clean_auth_token') || '' },
+                    body: formData
+                });
+                if (res.status === 401) {
+                    audioStatus.style.color = '#ef4444';
+                    audioStatus.innerText = 'Sesi PIN telah kedaluwarsa. Silakan masukkan PIN kembali.';
+                    audioProgressWrap.style.display = 'none';
+                    audioBtn.disabled = false;
+                    lockSession();
+                    return;
+                }
                 const data = await res.json();
 
                 if (!data.success) {
-                    audioStatus.style.color = '#f87171';
+                    audioStatus.style.color = '#ef4444';
                     audioStatus.innerText = 'Gagal: ' + (data.error || 'Terjadi kesalahan');
                     audioProgressWrap.style.display = 'none';
                     audioBtn.disabled = false;
                     return;
                 }
 
-                audioStatus.innerText = 'Mengekstrak audio...';
+                audioStatus.innerText = 'Mengekstrak trek audio berkualitas tinggi...';
                 audioPollTimer = setInterval(async () => {
                     try {
-                        const sres = await fetch('/api/extract-audio-status/' + data.job_id);
+                        const sres = await fetch('/api/extract-audio-status/' + data.job_id, {
+                            headers: { 'X-Auth-Token': localStorage.getItem('clean_auth_token') || '' }
+                        });
                         const sdata = await sres.json();
 
                         audioProgressBar.style.width = (sdata.progress || 0) + '%';
@@ -1056,15 +2652,15 @@
                         if (sdata.status === 'done') {
                             clearInterval(audioPollTimer);
                             audioProgressWrap.style.display = 'none';
-                            audioStatus.style.color = '#34d399';
-                            audioStatus.innerText = '✓ MP3 siap diunduh!';
+                            audioStatus.style.color = 'var(--color-success)';
+                            audioStatus.innerText = '✓ Ekstraksi MP3 selesai!';
                             if (sdata.meta && sdata.meta.duration) {
                                 audioMeta.style.display = 'block';
                                 audioMeta.innerText = 'Durasi: ' + sdata.meta.duration + 's — Bitrate: ' + (sdata.meta.bitrate_kbps || '?') + ' kbps';
                             }
                             audioDl.href = sdata.download_url;
                             audioDl.innerText = 'Unduh MP3 (' + sdata.filename + ')';
-                            audioDl.style.display = 'block';
+                            audioDl.style.display = 'flex';
                             audioAfterPlayer.src = sdata.download_url;
                             audioAfterPlayer.style.display = 'block';
                             audioAfterBox.style.display = 'block';
@@ -1072,15 +2668,15 @@
                         } else if (sdata.status === 'error') {
                             clearInterval(audioPollTimer);
                             audioProgressWrap.style.display = 'none';
-                            audioStatus.style.color = '#f87171';
+                            audioStatus.style.color = '#ef4444';
                             audioStatus.innerText = 'Gagal: ' + (sdata.error || 'kesalahan ekstraksi');
                             audioBtn.disabled = false;
                         }
-                    } catch (err) { /* keep polling */ }
-                }, 1200);
+                    } catch (err) {}
+                }, 1000);
             } catch (err) {
-                audioStatus.style.color = '#f87171';
-                audioStatus.innerText = 'Error menghubungi server.';
+                audioStatus.style.color = '#ef4444';
+                audioStatus.innerText = 'Kesalahan saat menghubungi server.';
                 audioProgressWrap.style.display = 'none';
                 audioBtn.disabled = false;
             }

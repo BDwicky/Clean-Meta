@@ -12,8 +12,9 @@ import hmac
 from flask import Flask, request, jsonify, send_from_directory, make_response
 
 app = Flask(__name__)
-UPLOAD_DIR = "/var/www/clean-ai/uploads"
-STATIC_DIR = "/var/www/clean-ai"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = "/var/www/clean-ai" if os.path.exists("/var/www/clean-ai") else BASE_DIR
+UPLOAD_DIR = "/var/www/clean-ai/uploads" if os.path.exists("/var/www/clean-ai/uploads") else os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 PIN_CODE = "123123"
@@ -34,6 +35,9 @@ def verify_auth_token(token):
 def is_request_authenticated():
     cookie_token = request.cookies.get("clean_auth")
     if verify_auth_token(cookie_token):
+        return True
+    auth_header = request.headers.get("X-Auth-Token")
+    if verify_auth_token(auth_header):
         return True
     header_pin = request.headers.get("X-PIN-Code")
     if header_pin == PIN_CODE:
@@ -297,11 +301,19 @@ def index():
 @app.route("/api/verify-pin", methods=["POST"])
 def verify_pin():
     data = request.get_json(silent=True) or {}
-    pin = data.get("pin", "").strip()
+    pin = (data.get("pin") or "").strip()
     if pin == PIN_CODE:
         token = create_auth_token()
         resp = make_response(jsonify({"success": True, "token": token}))
-        resp.set_cookie("clean_auth", token, max_age=30*86400, httponly=True, samesite="Lax")
+        is_https = request.is_secure or request.headers.get("X-Forwarded-Proto") == "https"
+        resp.set_cookie(
+            "clean_auth",
+            token,
+            max_age=30*86400,
+            httponly=True,
+            samesite="Lax",
+            secure=is_https
+        )
         return resp
     return jsonify({"success": False, "error": "PIN salah"}), 403
 
@@ -426,87 +438,75 @@ def video_status(job_id):
 
 import re as _re
 
-YT_YTDLP = "/root/img-env/bin/yt-dlp"
+YT_YTDLP = "/root/img-env/bin/yt-dlp" if os.path.exists("/root/img-env/bin/yt-dlp") else (shutil.which("yt-dlp") or "yt-dlp")
+
+def get_ytdlp_bin():
+    if os.path.exists(YT_YTDLP):
+        return YT_YTDLP
+    found = shutil.which(YT_YTDLP) or shutil.which("yt-dlp")
+    return found or "yt-dlp"
+
+def clean_youtube_url(raw):
+    """Normalize input URL: handles raw strings, embedded links from mobile share sheets, and missing protocols."""
+    if not raw:
+        return ""
+    raw = str(raw).strip()
+    # Match URL embedded in text (e.g. from Android/iOS share sheet: "Tonton video ini https://youtu.be/...")
+    m = _re.search(r"(https?://\S+)", raw)
+    if m:
+        return m.group(1).rstrip(",;)>]")
+    # If pasted without protocol (e.g. youtube.com/watch?v=... or youtu.be/...)
+    if _re.match(r"^(www\.|m\.|music\.)?(youtube\.com|youtu\.be)/", raw, _re.IGNORECASE):
+        return "https://" + raw
+    return raw
+
+def is_valid_youtube_url(url):
+    """Check if URL matches any valid YouTube format."""
+    if not url:
+        return False
+    pattern = r"^https?://([a-zA-Z0-9_-]+\.)?(youtube\.com|youtu\.be)/"
+    return bool(_re.match(pattern, url, _re.IGNORECASE))
 
 YT_JOBS = {}  # job_id -> {status, progress, filename, title, error}
 
-def yt_progress_hook(job_id):
-    def hook(d):
-        try:
-            if d.get("status") == "downloading":
-                total = d.get("total_bytes") or d.get("total_bytes_estimate") or 0
-                done = d.get("downloaded_bytes") or 0
-                if total:
-                    pct = int(done / total * 90)
-                    YT_JOBS[job_id]["progress"] = min(pct, 90)
-                YT_JOBS[job_id]["status"] = "downloading"
-                speed = d.get("_speed_str", "")
-                eta = d.get("_eta_str", "")
-                YT_JOBS[job_id]["meta_text"] = f"{speed} — ETA {eta}"
-            elif d.get("status") == "finished":
-                YT_JOBS[job_id]["status"] = "processing"
-                YT_JOBS[job_id]["progress"] = 92
-                YT_JOBS[job_id]["meta_text"] = "Menggabungkan stream video + audio..."
-        except Exception:
-            pass
-    return hook
-
 def run_youtube_job(job_id, url, mode, quality):
     """Download YouTube via yt-dlp.
-    mode: 'video' -> MP4 720p+ (video+audio merge)
-          'audio' -> M4A audio terbaik
+    mode: 'video' -> MP4 up to target quality (VP9/AV1/H264 merged into MP4)
+          'audio' -> M4A highest audio quality
     """
+    ytdlp_bin = get_ytdlp_bin()
     out_template = os.path.join(UPLOAD_DIR, f"yt_{job_id}.%(ext)s")
-    base_cmd = [
-        YT_YTDLP,
-        "--no-playlist",
-        "--no-warnings",
-        "--no-part",
-        "--restrict-filenames",
-        "--newline",
-        "--progress",
-        "--quiet",
-        "--progress-with-info",
-        "--encoding", "utf-8",
-        url,
-    ]
 
     try:
         YT_JOBS[job_id]["status"] = "downloading"
         YT_JOBS[job_id]["progress"] = 2
 
         if mode == "audio":
-            # Audio terbaik (m4a, kualitas paling jernih dari sumber)
-            cmd = base_cmd[:1] + [
-                "-f", "bestaudio[ext=m4a]/bestaudio",
-                "--merge-output-format", "m4a",
-                "-o", out_template,
-                "--print-json",
-            ] + base_cmd[1:]
-        else:
-            # Video 720p ke atas, format gabungan terbaik di bawah quality cap
-            fmt = f"bestvideo[height>={quality}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height>={quality}]+bestaudio/best[height>={quality}]/best"
-            cmd = [
-                YT_YTDLP,
+            full_cmd = [
+                ytdlp_bin,
                 "--no-playlist",
                 "--no-warnings",
+                "--no-check-certificates",
+                "--newline",
+                "--progress",
                 "--restrict-filenames",
-                "-f", fmt,
-                "--merge-output-format", "mp4",
+                "-f", "bestaudio[ext=m4a]/bestaudio",
                 "-o", out_template,
                 url,
             ]
-
-        # Tambahkan progress hook via python -u dan yt-dlp CLI (pakai --newline untuk parse)
-        full_cmd = [c for c in cmd if c not in ("--quiet", "--progress-with-info", "--print-json", "--encoding", "utf-8")]
-        # Ganti -f format audio yang konsisten
-        if mode == "audio":
+        else:
+            fmt = f"bestvideo[height<={quality}]+bestaudio[ext=m4a]/bestvideo[height<={quality}]+bestaudio/best[height<={quality}]/best"
             full_cmd = [
-                YT_YTDLP,
+                ytdlp_bin,
                 "--no-playlist",
                 "--no-warnings",
+                "--no-check-certificates",
+                "--extractor-args", "youtube:player_client=android,web",
+                "--newline",
+                "--progress",
                 "--restrict-filenames",
-                "-f", "bestaudio[ext=m4a]/bestaudio",
+                "-f", fmt,
+                "--merge-output-format", "mp4",
                 "-o", out_template,
                 url,
             ]
@@ -525,7 +525,6 @@ def run_youtube_job(job_id, url, mode, quality):
             line = line.strip()
             if not line:
                 continue
-            # Parse progress: [download]  45.3% of 12.34MiB at 2.5MiB/s ETA 00:05
             m = _regex.search(r"\[download\]\s+([\d.]+)%", line)
             if m:
                 YT_JOBS[job_id]["progress"] = min(int(float(m.group(1)) * 0.9), 90)
@@ -539,10 +538,10 @@ def run_youtube_job(job_id, url, mode, quality):
 
         proc.wait()
         if proc.returncode != 0:
-            raise RuntimeError("yt-dlp gagal mengunduh (exit %d). Video mungkin private/region-locked." % proc.returncode)
+            raise RuntimeError("yt-dlp gagal mengunduh (exit %d). Video mungkin dibatasi usia, private, atau memerlukan autentikasi." % proc.returncode)
 
         # Cari file hasil
-        candidates = [f for f in os.listdir(UPLOAD_DIR) if f.startswith(f"yt_{job_id}.") and not f.endswith(".part")]
+        candidates = [f for f in os.listdir(UPLOAD_DIR) if f.startswith(f"yt_{job_id}.") and not f.endswith(".part") and not f.endswith(".ytdl")]
         if not candidates:
             raise RuntimeError("File hasil tidak ditemukan di direktori uploads.")
         out_file = candidates[0]
@@ -551,25 +550,10 @@ def run_youtube_job(job_id, url, mode, quality):
         YT_JOBS[job_id]["progress"] = 95
         YT_JOBS[job_id]["status"] = "processing"
 
-        # Bersihkan metadata YouTube (artist, comment, encoder tag) & suntik tag kamera
-        now = datetime.datetime.now()
-        try:
-            exif_cmd = [
-                "exiftool", "-overwrite_original", "-all=",
-                "-Make=Apple",
-                "-Model=iPhone 15 Pro Max",
-                "-Software=18.1.1",
-                f"-CreateDate={now.strftime('%Y:%m:%d %H:%M:%S')}",
-                out_path
-            ]
-            subprocess.run(exif_cmd, check=True, timeout=60, capture_output=True)
-        except Exception:
-            pass  # metadata cleaning optional; jangan gagalkan download
-
         # Ambil judul video via yt-dlp --get-title (opsional)
         try:
             tproc = subprocess.run(
-                [YT_YTDLP, "--no-playlist", "--get-title", url],
+                [ytdlp_bin, "--no-playlist", "--get-title", url],
                 capture_output=True, text=True, timeout=30
             )
             if tproc.returncode == 0 and tproc.stdout.strip():
@@ -607,40 +591,172 @@ def run_youtube_job(job_id, url, mode, quality):
         YT_JOBS[job_id]["error"] = str(e)
 
 
+@app.route("/api/youtube-info", methods=["POST"])
+def youtube_info():
+    if not is_request_authenticated():
+        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        data = request.get_json(silent=True) or {}
+        raw_url = (data.get("url") or "").strip()
+        url = clean_youtube_url(raw_url)
+
+        if not url:
+            return jsonify({"error": "URL YouTube wajib diisi"}), 400
+        if not is_valid_youtube_url(url):
+            return jsonify({"error": "URL bukan link YouTube yang valid"}), 400
+
+        ytdlp_bin = get_ytdlp_bin()
+        if not (os.path.exists(ytdlp_bin) or shutil.which(ytdlp_bin)):
+            return jsonify({"error": "yt-dlp belum terpasang di server"}), 500
+
+        cmd = [
+            ytdlp_bin,
+            "-j",
+            "--skip-download",
+            "--no-playlist",
+            "--no-warnings",
+            "--no-check-certificates",
+            "--extractor-args", "youtube:player_client=android,web",
+            url
+        ]
+
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=35)
+        if proc.returncode != 0:
+            err = (proc.stderr or proc.stdout or "Gagal membaca informasi video dari YouTube.").strip()
+            return jsonify({"error": err[:300]}), 400
+
+        raw_stdout = proc.stdout.strip()
+        first_line = raw_stdout.splitlines()[0] if raw_stdout else "{}"
+        info = json.loads(first_line)
+        formats = info.get("formats", [])
+
+        heights = set()
+        widths = set()
+        has_1080_enhanced = False
+
+        for f in formats:
+            vcodec = f.get("vcodec")
+            if vcodec == "none":
+                continue
+
+            h = f.get("height")
+            w = f.get("width")
+            note = str(f.get("format_note") or "").lower()
+
+            if "premium" in note or "enhanced" in note:
+                has_1080_enhanced = True
+
+            if h:
+                try:
+                    heights.add(int(h))
+                except (ValueError, TypeError):
+                    pass
+            if w:
+                try:
+                    widths.add(int(w))
+                except (ValueError, TypeError):
+                    pass
+
+            res_str = str(f.get("resolution") or "")
+            if "x" in res_str:
+                try:
+                    parts = res_str.split("x")
+                    widths.add(int(parts[0]))
+                    heights.add(int(parts[1]))
+                except Exception:
+                    pass
+
+        detected_resolutions = []
+        if any(h >= 2000 for h in heights) or any(w >= 3800 for w in widths):
+            detected_resolutions.append(2160)
+        if any(1400 <= h < 2000 for h in heights) or any(2500 <= w < 3800 for w in widths):
+            detected_resolutions.append(1440)
+        if any(1000 <= h < 1400 for h in heights) or any(1800 <= w < 2500 for w in widths) or has_1080_enhanced:
+            detected_resolutions.append(1080)
+        if any(700 <= h < 1000 for h in heights) or any(1200 <= w < 1800 for w in widths):
+            detected_resolutions.append(720)
+        if any(460 <= h < 700 for h in heights) or any(800 <= w < 1200 for w in widths):
+            detected_resolutions.append(480)
+        if any(h < 460 for h in heights if h >= 300) or any(600 <= w < 800 for w in widths):
+            detected_resolutions.append(360)
+
+        detected_resolutions = sorted(list(set(detected_resolutions)))
+        if not detected_resolutions:
+            detected_resolutions = [720, 1080]
+
+        max_h = max(detected_resolutions)
+        duration_sec = info.get("duration") or 0
+        minutes = int(duration_sec // 60)
+        seconds = int(duration_sec % 60)
+        duration_str = f"{minutes:02d}:{seconds:02d}" if duration_sec else "N/A"
+
+        thumbnails = info.get("thumbnails", [])
+        thumb_url = info.get("thumbnail") or (thumbnails[-1]["url"] if thumbnails else "")
+
+        return jsonify({
+            "success": True,
+            "title": info.get("title", "Video YouTube"),
+            "uploader": info.get("uploader") or info.get("channel", "YouTube Channel"),
+            "thumbnail": thumb_url,
+            "duration": duration_sec,
+            "duration_str": duration_str,
+            "max_resolution": max_h,
+            "has_1080_enhanced": has_1080_enhanced,
+            "resolutions": detected_resolutions
+        })
+    except subprocess.TimeoutExpired:
+        return jsonify({"error": "Waktu periksa video habis (timeout). Server tetap bisa mengunduh 1080p langsung."}), 504
+    except Exception as e:
+        return jsonify({"error": f"Gagal mengecek video: {str(e)}"}), 500
+
+
 @app.route("/api/youtube-download", methods=["POST"])
 def youtube_download():
     if not is_request_authenticated():
         return jsonify({"error": "Unauthorized"}), 401
-    data = request.get_json(silent=True) or {}
-    url = (data.get("url") or "").strip()
-    mode = data.get("mode", "video")
-    quality = int(data.get("quality", 720))
+    try:
+        data = request.get_json(silent=True) or {}
+        raw_url = (data.get("url") or "").strip()
+        url = clean_youtube_url(raw_url)
+        mode = str(data.get("mode") or "video").strip().lower()
 
-    if not url:
-        return jsonify({"error": "URL YouTube wajib diisi"}), 400
-    if not (_re.match(r"^https?://(www\.|m\.|music\.)?(youtube\.com|youtu\.be)/", url) or _re.match(r"^https?://youtube\.com/shorts/", url)):
-        return jsonify({"error": "URL bukan link YouTube yang valid"}), 400
-    if mode not in ("video", "audio"):
-        return jsonify({"error": "Mode harus 'video' atau 'audio'"}), 400
-    if quality not in (720, 1080, 1440, 2160):
-        quality = 720
-    if not os.path.exists(YT_YTDLP):
-        return jsonify({"error": "yt-dlp belum terpasang di server"}), 500
+        # Safely parse quality
+        raw_q = data.get("quality")
+        try:
+            quality = int(raw_q or 720)
+        except (ValueError, TypeError):
+            digits = "".join(c for c in str(raw_q) if c.isdigit())
+            quality = int(digits) if digits else 720
 
-    job_id = uuid.uuid4().hex[:12]
-    YT_JOBS[job_id] = {
-        "status": "queued",
-        "progress": 0,
-        "filename": None,
-        "title": None,
-        "meta": {},
-        "error": None,
-    }
+        if not url:
+            return jsonify({"error": "URL YouTube wajib diisi"}), 400
+        if not is_valid_youtube_url(url):
+            return jsonify({"error": "URL bukan link YouTube yang valid"}), 400
+        if mode not in ("video", "audio"):
+            mode = "video"
+        if quality not in (144, 240, 360, 480, 720, 1080, 1440, 2160):
+            quality = 720
 
-    t = threading.Thread(target=run_youtube_job, args=(job_id, url, mode, quality), daemon=True)
-    t.start()
+        ytdlp_bin = get_ytdlp_bin()
+        if not (os.path.exists(ytdlp_bin) or shutil.which(ytdlp_bin)):
+            return jsonify({"error": "yt-dlp belum terpasang di server"}), 500
 
-    return jsonify({"success": True, "job_id": job_id})
+        job_id = uuid.uuid4().hex[:12]
+        YT_JOBS[job_id] = {
+            "status": "queued",
+            "progress": 0,
+            "filename": None,
+            "title": None,
+            "meta": {},
+            "error": None,
+        }
+
+        t = threading.Thread(target=run_youtube_job, args=(job_id, url, mode, quality), daemon=True)
+        t.start()
+
+        return jsonify({"success": True, "job_id": job_id})
+    except Exception as e:
+        return jsonify({"error": f"Gagal memulai unduhan: {str(e)}"}), 500
 
 
 @app.route("/api/youtube-status/<job_id>")
