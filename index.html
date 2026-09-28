@@ -1429,13 +1429,9 @@
                 </div>
 
                 <div class="nav-tabs">
-                    <div class="nav-tab active" id="tabImage" onclick="setMode('image')">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                        Foto
-                    </div>
-                    <div class="nav-tab" id="tabVideo" onclick="setMode('video')">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                        Video
+                    <div class="nav-tab active" id="tabCleaner" onclick="showSection('cleaner')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        Sanitasi Media
                     </div>
                     <div class="nav-tab" id="tabYouTube" onclick="showSection('youtube')">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
@@ -2256,10 +2252,10 @@
 
         function applyModeUI(m) {
             mode = m;
-            document.getElementById('tabImage').classList.toggle('active', m === 'image');
-            document.getElementById('tabVideo').classList.toggle('active', m === 'video');
-            document.getElementById('subModeImage').classList.toggle('active', m === 'image');
-            document.getElementById('subModeVideo').classList.toggle('active', m === 'video');
+            const subImg = document.getElementById('subModeImage');
+            const subVid = document.getElementById('subModeVideo');
+            if (subImg) subImg.classList.toggle('active', m === 'image');
+            if (subVid) subVid.classList.toggle('active', m === 'video');
             pipelineLabel.innerText = m === 'image' ? 'Mode: Foto (Bit-Exact)' : 'Mode: Video (Stream Copy)';
             fileInput.accept = (m === 'image') ? 'image/*' : 'video/*,.mp4,.mov,.webm,.mkv,.avi';
         }
@@ -2787,8 +2783,8 @@
             const secHist = document.getElementById('sectionHistory');
             if (secHist) secHist.style.display = (section === 'history') ? 'block' : 'none';
 
-            document.getElementById('tabImage').classList.toggle('active', section === 'cleaner' && mode === 'image');
-            document.getElementById('tabVideo').classList.toggle('active', section === 'cleaner' && mode === 'video');
+            const tabClean = document.getElementById('tabCleaner');
+            if (tabClean) tabClean.classList.toggle('active', section === 'cleaner');
             document.getElementById('tabYouTube').classList.toggle('active', section === 'youtube');
             document.getElementById('tabAudioExtract').classList.toggle('active', section === 'audio');
             const tabHist = document.getElementById('tabHistory');
