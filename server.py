@@ -49,12 +49,15 @@ def check_auth():
     # Mengizinkan akses login verification endpoint
     if request.path == "/api/verify-pin":
         return None
-    # Jika root atau static upload atau api dicek
+    # Cek autentikasi: cookie, header X-Auth-Token, atau query param token
     if not is_request_authenticated():
+        # Khusus endpoint stream: cek juga token di query param
+        qs_token = request.args.get("token") or ""
+        if verify_auth_token(qs_token):
+            return None
         if request.path.startswith("/api/"):
             return jsonify({"error": "Unauthorized: Masukkan PIN terlebih dahulu", "locked": True}), 401
-        # Jika membuka halaman web atau download file saat belum login, tetap layani index.html (tapi konten aplikasi tidak bisa di-load/di-execute)
-        # index.html akan menampilkan popup PIN dan tidak memiliki token valid untuk mengakses API
+        # Jika membuka halaman web atau download file saat belum login, tetap layani index.html
 
 
 def read_metadata_summary(file_path):

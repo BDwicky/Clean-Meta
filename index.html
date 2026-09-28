@@ -2405,33 +2405,37 @@
             ytAfterBox.style.display = 'none';
             ytDl.style.display = 'none';
 
-            // === PILIHAN 1: Direct Stream — 1 Klik, seperti IDM ===
-            // Buat URL stream langsung ke endpoint /api/youtube-stream
+            // === DIRECT STREAM — IDM Style ===
+            // Gunakan window.open() agar IDM dapat mendeteksi dan mengambil alih unduhan
             const token = localStorage.getItem('clean_auth_token') || '';
             const encodedUrl = encodeURIComponent(url);
-            const streamUrl = `/api/youtube-stream?url=${encodedUrl}&mode=${ytMode}&quality=${ytQuality || 720}&token=${encodeURIComponent(token)}`;
+            const quality = ytQuality || 720;
+            const mode = ytMode || 'video';
+            const ext = (mode === 'audio') ? 'm4a' : 'mp4';
+            const streamUrl = `/api/youtube-stream?url=${encodedUrl}&mode=${mode}&quality=${quality}&token=${encodeURIComponent(token)}`;
 
-            // Buka link stream — ini yang memicu dialog IDM atau download bar browser secara instan
-            const dlAnchor = document.createElement('a');
-            dlAnchor.href = streamUrl;
-            dlAnchor.setAttribute('download', `video_${ytQuality || 720}p_youtube.mp4`);
-            document.body.appendChild(dlAnchor);
-            dlAnchor.click();
-            setTimeout(() => dlAnchor.remove(), 1000);
+            // window.open() = cara yang dikenali IDM sebagai "download baru"
+            // IDM hook pada event window.open dengan URL yang mengembalikan Content-Disposition: attachment
+            const dlWin = window.open(streamUrl, '_blank');
 
-            // Tampilkan status dan link manual sebagai fallback
+            // Fallback jika window.open diblokir popup blocker
+            if (!dlWin || dlWin.closed || typeof dlWin.closed === 'undefined') {
+                // Fallback: navigasi langsung di tab yang sama
+                window.location.href = streamUrl;
+            }
+
+            // Tampilkan status dan fallback link manual
             ytProgressWrap.style.display = 'none';
             ytStatus.style.color = 'var(--color-success)';
-            ytStatus.innerText = '⬇ Unduhan dimulai! Cek bar unduhan browser atau popup IDM Anda.';
+            ytStatus.innerHTML = '⬇ Unduhan dimulai! <small style="color:var(--text-muted)">Jika IDM muncul klik Start, jika tidak cek bar unduhan browser.</small>';
             ytDl.href = streamUrl;
-            ytDl.innerText = 'Klik di sini jika unduhan tidak berjalan otomatis';
-            ytDl.setAttribute('download', `video_${ytQuality || 720}p_youtube.mp4`);
+            ytDl.setAttribute('download', `video_${quality}p_youtube.${ext}`);
             ytDl.setAttribute('target', '_blank');
+            ytDl.innerText = `↗ Klik di sini jika tidak otomatis terunduh`;
             ytDl.style.display = 'flex';
             ytBtn.disabled = false;
-            ytAfterBox.style.display = 'none'; // Tidak perlu preview karena file tidak di-cache
 
-            return; // Selesai — tidak perlu try/fetch/polling lagi
+            return; // Selesai
         }
 
 
