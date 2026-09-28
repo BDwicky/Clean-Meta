@@ -1892,6 +1892,7 @@
                         Ekstrak trek suara murni dari berkas video menjadi format MP3 jernih dengan kontrol bitrate variabel profesional.
                     </p>
 
+                    <!-- Audio Dropzone -->
                     <div class="dropzone" id="audioDropzone" onclick="document.getElementById('audioFileInput').click()">
                         <div class="dropzone-icon">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
@@ -1901,6 +1902,23 @@
                         <input type="file" id="audioFileInput" accept="video/*,.mp4,.mov,.webm,.mkv,.avi">
                     </div>
 
+                    <!-- Selected Audio File Metadata Card -->
+                    <div class="file-selected-card" id="audioFileMetaCard" style="display: none; margin-bottom: 14px;">
+                        <div class="file-info-group">
+                            <div class="file-icon-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                            </div>
+                            <div class="file-name-meta">
+                                <div class="file-name-title" id="audioSelectedFileName">video.mp4</div>
+                                <div class="file-size-badge" id="audioSelectedFileSize" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">0.0 MB • Video Sumber</div>
+                            </div>
+                        </div>
+                        <button class="btn-clear-file" type="button" title="Ganti Berkas Video" onclick="clearSelectedAudioFile(event)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Audio Before Preview Box -->
                     <div id="audioBeforeBox" class="preview-box">
                         <div class="preview-header-bar">Preview Video Sumber</div>
                         <div class="preview-media-frame">
@@ -1908,26 +1926,41 @@
                         </div>
                     </div>
 
-                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">KUALITAS BITRATE MP3</div>
-                    <div class="quality-grid" style="grid-template-columns: repeat(3, 1fr);">
-                        <div class="quality-card active" data-abitrate="high" onclick="setAudioBitrate('high')">
-                            <div class="quality-name">Studio VBR</div>
-                            <div class="quality-sub">~245 kbps (Tertinggi)</div>
+                    <!-- Empty State saat belum ada video -->
+                    <div id="audioWaitingState" style="text-align: center; padding: 36px 18px; background: rgba(255,255,255,0.015); border: 1px dashed var(--border-medium); border-radius: var(--radius-md); margin-top: 14px;">
+                        <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(245, 158, 11, 0.1); color: #f59e0b; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto;">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
                         </div>
-                        <div class="quality-card" data-abitrate="medium" onclick="setAudioBitrate('medium')">
-                            <div class="quality-name">High VBR</div>
-                            <div class="quality-sub">~190 kbps (Seimbang)</div>
-                        </div>
-                        <div class="quality-card" data-abitrate="standard" onclick="setAudioBitrate('standard')">
-                            <div class="quality-name">Standard CBR</div>
-                            <div class="quality-sub">192 kbps (Standar)</div>
-                        </div>
+                        <div style="font-weight: 600; font-size: 14.5px; color: var(--text-primary); margin-bottom: 4px;">Menunggu Berkas Video Sumber</div>
+                        <div style="font-size: 12.5px; color: var(--text-muted); max-width: 420px; margin: 0 auto;">Pilih atau seret berkas video di atas. Pilihan kualitas bitrate MP3 dan tombol konversi akan otomatis muncul setelah video dipilih.</div>
                     </div>
 
-                    <button class="btn-primary" id="audioBtn" onclick="startAudioExtract()" disabled>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                        Ekstrak Trek Audio ke MP3
-                    </button>
+                    <!-- Configuration Area (Hanya muncul saat video terdeteksi) -->
+                    <div id="audioConfigArea" style="display: none; margin-top: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">KUALITAS BITRATE MP3</span>
+                            <span style="font-size: 11.5px; color: var(--text-muted);">Pilih resolusi audio target</span>
+                        </div>
+                        <div class="quality-grid" style="grid-template-columns: repeat(3, 1fr);">
+                            <div class="quality-card active" data-abitrate="high" onclick="setAudioBitrate('high')">
+                                <div class="quality-name">Studio VBR</div>
+                                <div class="quality-sub">~245 kbps (Tertinggi)</div>
+                            </div>
+                            <div class="quality-card" data-abitrate="medium" onclick="setAudioBitrate('medium')">
+                                <div class="quality-name">High VBR</div>
+                                <div class="quality-sub">~190 kbps (Seimbang)</div>
+                            </div>
+                            <div class="quality-card" data-abitrate="standard" onclick="setAudioBitrate('standard')">
+                                <div class="quality-name">Standard CBR</div>
+                                <div class="quality-sub">192 kbps (Standar)</div>
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" id="audioBtn" onclick="startAudioExtract()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                            Ekstrak Trek Audio ke MP3
+                        </button>
+                    </div>
 
                     <div class="status-box" id="audioStatus"></div>
                     <div class="progress-wrap" id="audioProgressWrap"><div class="progress-bar" id="audioProgressBar">0%</div></div>
@@ -2985,6 +3018,14 @@
                     if (ytInfoCard) ytInfoCard.style.display = 'none';
                     if (ytAnalyzingCard) ytAnalyzingCard.style.display = 'none';
                 }
+            } else if (section === 'audio') {
+                if (!audioFile) {
+                    if (audioWaitingState) audioWaitingState.style.display = 'block';
+                    if (audioConfigArea) audioConfigArea.style.display = 'none';
+                    if (audioFileMetaCard) audioFileMetaCard.style.display = 'none';
+                    if (audioDropzone) audioDropzone.style.display = 'block';
+                    if (audioBeforeBox) audioBeforeBox.style.display = 'none';
+                }
             }
         }
 
@@ -3174,6 +3215,11 @@
         const audioDropzone = document.getElementById('audioDropzone');
         const audioFileInput = document.getElementById('audioFileInput');
         const audioDropText = document.getElementById('audioDropText');
+        const audioFileMetaCard = document.getElementById('audioFileMetaCard');
+        const audioSelectedFileName = document.getElementById('audioSelectedFileName');
+        const audioSelectedFileSize = document.getElementById('audioSelectedFileSize');
+        const audioWaitingState = document.getElementById('audioWaitingState');
+        const audioConfigArea = document.getElementById('audioConfigArea');
         const audioBeforeBox = document.getElementById('audioBeforeBox');
         const audioBeforeVid = document.getElementById('audioBeforeVid');
         const audioBtn = document.getElementById('audioBtn');
@@ -3209,24 +3255,44 @@
             audioBeforeBox.style.display = 'block';
         }
 
+        function clearSelectedAudioFile(e) {
+            if (e) e.stopPropagation();
+            audioFile = null;
+            if (audioFileInput) audioFileInput.value = '';
+            if (audioFileMetaCard) audioFileMetaCard.style.display = 'none';
+            if (audioDropzone) audioDropzone.style.display = 'block';
+            showAudioBeforePreview(null);
+            if (audioConfigArea) audioConfigArea.style.display = 'none';
+            if (audioWaitingState) audioWaitingState.style.display = 'block';
+            if (audioAfterBox) audioAfterBox.style.display = 'none';
+            if (audioDl) audioDl.style.display = 'none';
+            if (audioStatus) audioStatus.innerHTML = '';
+            if (audioBtn) audioBtn.disabled = true;
+        }
+
         function handleAudioFileSelected(f) {
             const isVideo = (f.type || '').startsWith('video/') ||
                 ['mp4', 'mov', 'webm', 'mkv', 'avi'].includes((f.name || '').split('.').pop().toLowerCase());
             if (!isVideo) {
                 audioStatus.style.color = '#ef4444';
                 audioStatus.innerText = 'Format berkas tidak dikenali. Gunakan file video (MP4, MOV, WEBM, MKV).';
-                audioFile = null;
-                audioBtn.disabled = true;
-                showAudioBeforePreview(null);
+                clearSelectedAudioFile();
                 return;
             }
             audioFile = f;
-            audioDropText.innerText = '✓ ' + f.name + ' (' + (f.size / (1024 * 1024)).toFixed(1) + ' MB)';
+            const sizeMb = (f.size / (1024 * 1024)).toFixed(1);
+            if (audioSelectedFileName) audioSelectedFileName.innerText = f.name;
+            if (audioSelectedFileSize) audioSelectedFileSize.innerText = `${sizeMb} MB • Video Sumber`;
+            if (audioFileMetaCard) audioFileMetaCard.style.display = 'flex';
+            if (audioDropzone) audioDropzone.style.display = 'none';
+
             showAudioBeforePreview(f);
-            audioBtn.disabled = false;
-            audioStatus.innerHTML = '';
-            audioAfterBox.style.display = 'none';
-            audioDl.style.display = 'none';
+            if (audioWaitingState) audioWaitingState.style.display = 'none';
+            if (audioConfigArea) audioConfigArea.style.display = 'block';
+            if (audioBtn) audioBtn.disabled = false;
+            if (audioStatus) audioStatus.innerHTML = '';
+            if (audioAfterBox) audioAfterBox.style.display = 'none';
+            if (audioDl) audioDl.style.display = 'none';
         }
 
         audioFileInput.addEventListener('change', () => {
