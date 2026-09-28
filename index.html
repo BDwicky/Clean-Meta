@@ -879,6 +879,36 @@
             top: 2px;
         }
 
+        .removed-tags-wrapper {
+            position: relative;
+            border-radius: var(--radius-sm);
+            transition: max-height 0.25s ease-out;
+        }
+
+        .removed-tags-wrapper.collapsed {
+            max-height: 58px;
+            overflow: hidden;
+        }
+
+        .removed-tags-wrapper.collapsed .tags-blur-overlay {
+            display: block;
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 32px;
+            background: linear-gradient(180deg, rgba(17, 17, 26, 0.08) 0%, rgba(17, 17, 26, 0.88) 90%);
+            backdrop-filter: blur(3.5px);
+            -webkit-backdrop-filter: blur(3.5px);
+            pointer-events: none;
+            border-bottom-left-radius: var(--radius-sm);
+            border-bottom-right-radius: var(--radius-sm);
+        }
+
+        .removed-tags-wrapper:not(.collapsed) .tags-blur-overlay {
+            display: none;
+        }
+
         .tag-pill-list {
             display: flex;
             flex-wrap: wrap;
@@ -888,6 +918,7 @@
         .tag-pill {
             font-family: var(--font-mono);
             font-size: 11.5px;
+            line-height: 1.35;
             padding: 4px 8px;
             border-radius: var(--radius-sm);
             background: rgba(239, 68, 68, 0.08);
@@ -899,23 +930,28 @@
         .btn-toggle-tags {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
             background: rgba(239, 68, 68, 0.08);
             border: 1px solid rgba(239, 68, 68, 0.25);
             color: #fca5a5;
             font-size: 11.5px;
             font-weight: 600;
-            padding: 5px 12px;
+            padding: 6px 13px;
             border-radius: var(--radius-sm);
             cursor: pointer;
             margin-top: 10px;
             transition: all 0.2s ease;
+            user-select: none;
         }
 
         .btn-toggle-tags:hover {
             background: rgba(239, 68, 68, 0.18);
             border-color: rgba(239, 68, 68, 0.45);
             color: #ffffff;
+        }
+
+        .btn-toggle-tags svg {
+            transition: transform 0.25s ease;
         }
 
         /* EXIF Data Table */
@@ -2472,14 +2508,15 @@
         let tagsExpanded = false;
         function toggleRemovedTags() {
             tagsExpanded = !tagsExpanded;
-            const extras = document.querySelectorAll('.extra-tag');
-            extras.forEach(el => {
-                el.style.display = tagsExpanded ? 'inline-block' : 'none';
-            });
+            const wrapper = document.getElementById('removedTagsWrapper');
             const btnText = document.getElementById('btnToggleTagsText');
             const btnIcon = document.getElementById('btnToggleTagsIcon');
+            const total = document.getElementById('removedCount') ? document.getElementById('removedCount').innerText : '';
+            if (wrapper) {
+                wrapper.classList.toggle('collapsed', !tagsExpanded);
+            }
             if (btnText) {
-                btnText.innerText = tagsExpanded ? 'Sembunyikan detail tag' : `Lihat ${extras.length} detail tag lainnya`;
+                btnText.innerText = tagsExpanded ? 'Sembunyikan detail tag' : `Lihat detail lainnya (${total} metadata dihapus)`;
             }
             if (btnIcon) {
                 btnIcon.style.transform = tagsExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
@@ -2497,30 +2534,39 @@
             removedCount.innerText = items.length;
 
             if (items.length > 0) {
+                const wrapper = document.createElement('div');
+                wrapper.id = 'removedTagsWrapper';
+                const hasOverflow = items.length > 1;
+                wrapper.className = 'removed-tags-wrapper' + (hasOverflow ? ' collapsed' : '');
+
                 const tagDiv = document.createElement('div');
                 tagDiv.className = 'tag-pill-list';
-                const INITIAL_LIMIT = 5;
-                items.forEach((item, idx) => {
+
+                items.forEach((item) => {
                     const span = document.createElement('span');
-                    span.className = 'tag-pill' + (idx >= INITIAL_LIMIT ? ' extra-tag' : '');
-                    if (idx >= INITIAL_LIMIT) {
-                        span.style.display = 'none';
-                    }
+                    span.className = 'tag-pill';
                     span.innerText = item;
                     tagDiv.appendChild(span);
                 });
-                removedContainer.appendChild(tagDiv);
+                wrapper.appendChild(tagDiv);
 
-                if (items.length > INITIAL_LIMIT) {
-                    const remaining = items.length - INITIAL_LIMIT;
+                if (hasOverflow) {
+                    const blurOverlay = document.createElement('div');
+                    blurOverlay.className = 'tags-blur-overlay';
+                    wrapper.appendChild(blurOverlay);
+                }
+
+                removedContainer.appendChild(wrapper);
+
+                if (hasOverflow) {
                     const btnToggle = document.createElement('button');
                     btnToggle.type = 'button';
                     btnToggle.className = 'btn-toggle-tags';
                     btnToggle.id = 'btnToggleTags';
                     btnToggle.onclick = toggleRemovedTags;
                     btnToggle.innerHTML = `
-                        <span id="btnToggleTagsText">Lihat ${remaining} detail tag lainnya</span>
-                        <svg id="btnToggleTagsIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+                        <span id="btnToggleTagsText">Lihat detail lainnya (${items.length} metadata dihapus)</span>
+                        <svg id="btnToggleTagsIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition: transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
                     `;
                     removedContainer.appendChild(btnToggle);
                 }
