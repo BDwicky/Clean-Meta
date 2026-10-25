@@ -138,6 +138,8 @@
         }
 
         .nav-tab {
+            background: transparent;
+            font-family: inherit;
             padding: 8px 16px;
             border-radius: 8px;
             font-size: 13.5px;
@@ -150,18 +152,37 @@
             gap: 8px;
             user-select: none;
             border: 1px solid transparent;
+            outline: none;
+            box-shadow: none;
+            line-height: 1.5;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .nav-tab:hover {
+        .nav-tab svg {
+            color: var(--text-muted);
+            transition: color 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .nav-tab:hover:not(.active) {
             color: var(--text-primary);
-            background-color: rgba(255, 255, 255, 0.03);
+            background-color: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-tab:hover:not(.active) svg {
+            color: var(--text-secondary);
         }
 
         .nav-tab.active {
             color: #ffffff;
             background-color: var(--bg-card);
             border-color: var(--border-medium);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-tab.active svg {
+            color: #818cf8;
         }
 
         .header-meta {
