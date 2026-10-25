@@ -11,7 +11,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH, timeout=15)
+    conn = sqlite3.connect(DB_PATH, timeout=20)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -20,6 +20,8 @@ def init_db():
     """Inisialisasi schema database SQLite untuk riwayat per client dan pengaturan admin."""
     conn = get_db()
     cur = conn.cursor()
+    cur.execute("PRAGMA journal_mode = WAL;")
+    cur.execute("PRAGMA synchronous = NORMAL;")
     cur.execute("""
     CREATE TABLE IF NOT EXISTS history (
         id TEXT PRIMARY KEY,
@@ -188,9 +190,16 @@ def set_item_permanent(item_id, is_permanent: bool):
 
 
 def delete_history_item(item_id, client_id=None, is_admin=False):
-    """Hapus entri riwayat tertentu."""
+    """Hapus entri riwayat tertentu dan kembalikan (affected > 0, filename)."""
     conn = get_db()
     cur = conn.cursor()
+    if is_admin:
+        cur.execute("SELECT filename FROM history WHERE id = ?", (item_id,))
+    else:
+        cur.execute("SELECT filename FROM history WHERE id = ? AND client_id = ?", (item_id, client_id))
+    row = cur.fetchone()
+    filename = row["filename"] if row else None
+
     if is_admin:
         cur.execute("DELETE FROM history WHERE id = ?", (item_id,))
     else:
@@ -198,19 +207,24 @@ def delete_history_item(item_id, client_id=None, is_admin=False):
     affected = cur.rowcount
     conn.commit()
     conn.close()
-    return affected > 0
+    return (affected > 0, filename)
 
 
 def clear_history_list(client_id=None, is_admin=False):
-    """Bersihkan riwayat (per client atau semua jika admin)."""
+    """Bersihkan riwayat (per client atau semua jika admin) dan kembalikan daftar filename terhapus."""
     conn = get_db()
     cur = conn.cursor()
     if is_admin and (client_id is None or client_id == "all"):
+        cur.execute("SELECT filename FROM history WHERE filename IS NOT NULL AND filename != ''")
+        rows = cur.fetchall()
         cur.execute("DELETE FROM history")
     else:
+        cur.execute("SELECT filename FROM history WHERE client_id = ? AND filename IS NOT NULL AND filename != ''", (client_id,))
+        rows = cur.fetchall()
         cur.execute("DELETE FROM history WHERE client_id = ?", (client_id,))
     conn.commit()
     conn.close()
+    return [r["filename"] for r in rows if r["filename"]]
 
 
 def get_protected_filenames():

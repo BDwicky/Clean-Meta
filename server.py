@@ -50,6 +50,14 @@ SECRET_KEY = "clean-ai-secret-pin-salt-" + hashlib.sha256(PIN_CODE.encode()).hex
 
 JOBS = {}  # job_id -> {status, progress, filename, report, error, meta}
 
+def evict_old_jobs(jobs_dict, max_items=100):
+    """Batasi akumulasi memori job dictionary di memori."""
+    if len(jobs_dict) > max_items:
+        excess = len(jobs_dict) - max_items
+        for k in list(jobs_dict.keys())[:excess]:
+            jobs_dict.pop(k, None)
+
+
 def get_request_client_id():
     """Mengambil Client ID unik per perangkat dari header X-Client-ID atau cookie clean_client_id"""
     cid = request.headers.get("X-Client-ID") or request.cookies.get("clean_client_id")
@@ -349,33 +357,39 @@ def run_video_job_metadata_only(job_id, in_path, out_path, probe, camera_preset=
         removed = read_metadata_summary(in_path)
 
         # 1. Stream copy tanpa re-encode (-c copy), strip internal container metadata (-map_metadata -1)
+        ext = os.path.splitext(out_path)[1].lower().replace(".", "")
         cmd = [
             "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
             "-i", in_path,
             "-c", "copy",
             "-map_metadata", "-1",
             "-fflags", "+bitexact",
-            "-movflags", "+faststart",
-            out_path
         ]
+        if ext in ("mp4", "mov", "m4v"):
+            cmd.extend(["-movflags", "+faststart"])
+        cmd.append(out_path)
         subprocess.run(cmd, check=True, timeout=180)
         JOBS[job_id]["progress"] = 70
 
-        # 2. Hapus sisa metadata dan suntikkan tag kamera QuickTime
+        # 2. Hapus sisa metadata dan suntikkan tag kamera QuickTime (hanya untuk format MP4/MOV)
         now = datetime.datetime.now()
         create_str = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        exif_cmd = [
-            "exiftool", "-overwrite_original",
-            "-all=",
-            f"-Make={cam['make']}",
-            f"-Model={cam['model']}",
-            f"-Software={cam['software']}",
-            f"-CreateDate={now.strftime('%Y:%m:%d %H:%M:%S')}",
-            f"-ModifyDate={now.strftime('%Y:%m:%d %H:%M:%S')}",
-            out_path,
-        ]
-        subprocess.run(exif_cmd, check=True, timeout=120)
+        if ext in ("mp4", "mov", "m4v"):
+            try:
+                exif_cmd = [
+                    "exiftool", "-overwrite_original",
+                    "-all=",
+                    f"-Make={cam['make']}",
+                    f"-Model={cam['model']}",
+                    f"-Software={cam['software']}",
+                    f"-CreateDate={now.strftime('%Y:%m:%d %H:%M:%S')}",
+                    f"-ModifyDate={now.strftime('%Y:%m:%d %H:%M:%S')}",
+                    out_path,
+                ]
+                subprocess.run(exif_cmd, check=True, timeout=120)
+            except Exception:
+                pass
         JOBS[job_id]["progress"] = 95
 
         if os.path.exists(in_path):
@@ -421,6 +435,11 @@ def run_video_job_metadata_only(job_id, in_path, out_path, probe, camera_preset=
         if os.path.exists(in_path):
             try:
                 os.remove(in_path)
+            except Exception:
+                pass
+        if os.path.exists(out_path):
+            try:
+                os.remove(out_path)
             except Exception:
                 pass
 
@@ -567,9 +586,18 @@ def handle_history():
     elif request.method == "DELETE":
         scope = request.args.get("scope", "client")
         if scope == "all" and is_adm:
-            db.clear_history_list(is_admin=True)
+            deleted_fnames = db.clear_history_list(is_admin=True)
         else:
-            db.clear_history_list(client_id=client_id, is_admin=False)
+            deleted_fnames = db.clear_history_list(client_id=client_id, is_admin=False)
+        protected_files = db.get_protected_filenames()
+        for fname in deleted_fnames:
+            if fname and fname not in protected_files:
+                fpath = os.path.join(UPLOAD_DIR, fname)
+                if os.path.isfile(fpath):
+                    try:
+                        os.remove(fpath)
+                    except Exception:
+                        pass
         return jsonify({"success": True})
 
 
@@ -577,7 +605,16 @@ def handle_history():
 def delete_history_single(item_id):
     client_id = get_request_client_id()
     is_adm = is_admin_authenticated()
-    ok = db.delete_history_item(item_id, client_id=client_id, is_admin=is_adm)
+    ok, fname = db.delete_history_item(item_id, client_id=client_id, is_admin=is_adm)
+    if ok and fname:
+        protected_files = db.get_protected_filenames()
+        if fname not in protected_files:
+            fpath = os.path.join(UPLOAD_DIR, fname)
+            if os.path.isfile(fpath):
+                try:
+                    os.remove(fpath)
+                except Exception:
+                    pass
     return jsonify({"success": ok})
 
 
@@ -662,6 +699,7 @@ def clean_video():
             os.remove(in_path)
         return jsonify({"error": "File bukan video yang valid"}), 400
 
+    evict_old_jobs(JOBS)
     JOBS[job_id] = {
         "status": "queued",
         "progress": 0,
@@ -872,8 +910,6 @@ def run_youtube_job(job_id, url, mode, quality):
 
 @app.route("/api/youtube-info", methods=["POST"])
 def youtube_info():
-    if not is_request_authenticated():
-        return jsonify({"error": "Unauthorized"}), 401
     try:
         data = request.get_json(silent=True) or {}
         raw_url = (data.get("url") or "").strip()
@@ -1035,8 +1071,6 @@ def youtube_info():
 
 @app.route("/api/youtube-download", methods=["POST"])
 def youtube_download():
-    if not is_request_authenticated():
-        return jsonify({"error": "Unauthorized"}), 401
     try:
         data = request.get_json(silent=True) or {}
         raw_url = (data.get("url") or "").strip()
@@ -1065,6 +1099,7 @@ def youtube_download():
             return jsonify({"error": "yt-dlp belum terpasang di server"}), 500
 
         job_id = uuid.uuid4().hex[:12]
+        evict_old_jobs(YT_JOBS)
         YT_JOBS[job_id] = {
             "status": "queued",
             "progress": 0,
@@ -1084,8 +1119,6 @@ def youtube_download():
 
 @app.route("/api/youtube-status/<job_id>")
 def youtube_status(job_id):
-    if not is_request_authenticated():
-        return jsonify({"error": "Unauthorized"}), 401
     job = YT_JOBS.get(job_id)
     if not job:
         return jsonify({"error": "Job tidak ditemukan"}), 404
@@ -1156,6 +1189,7 @@ def youtube_stream():
     ]
 
     def generate():
+        proc = None
         try:
             proc = subprocess.Popen(
                 cmd,
@@ -1170,13 +1204,17 @@ def youtube_stream():
                 yield chunk
             proc.wait()
         except GeneratorExit:
-            # Pengguna menutup koneksi / membatalkan unduhan
-            try:
-                proc.kill()
-            except Exception:
-                pass
+            pass
         except Exception:
             pass
+        finally:
+            if proc is not None:
+                try:
+                    if proc.poll() is None:
+                        proc.kill()
+                        proc.wait()
+                except Exception:
+                    pass
 
     headers = {
         "Content-Disposition": f'attachment; filename="{dl_filename}"',
@@ -1278,8 +1316,6 @@ def run_audio_extract_job(job_id, in_path, bitrate):
 
 @app.route("/api/extract-audio", methods=["POST"])
 def extract_audio():
-    if not is_request_authenticated():
-        return jsonify({"error": "Unauthorized"}), 401
     if "video" not in request.files:
         return jsonify({"error": "No video uploaded"}), 400
     file = request.files["video"]
@@ -1292,9 +1328,12 @@ def extract_audio():
 
     job_id = uuid.uuid4().hex[:12]
     orig_ext = os.path.splitext(file.filename)[1] or ".mp4"
+    if orig_ext.lower() not in [".mp4", ".mov", ".webm", ".mkv", ".avi", ".ts", ".flv", ".wmv", ".m4v"]:
+        orig_ext = ".mp4"
     in_path = os.path.join(UPLOAD_DIR, f"audext_{job_id}_in{orig_ext}")
     file.save(in_path)
 
+    evict_old_jobs(AUDIO_JOBS)
     AUDIO_JOBS[job_id] = {
         "status": "queued",
         "progress": 0,
@@ -1311,8 +1350,6 @@ def extract_audio():
 
 @app.route("/api/extract-audio-status/<job_id>")
 def extract_audio_status(job_id):
-    if not is_request_authenticated():
-        return jsonify({"error": "Unauthorized"}), 401
     job = AUDIO_JOBS.get(job_id)
     if not job:
         return jsonify({"error": "Job tidak ditemukan"}), 404
