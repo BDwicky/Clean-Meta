@@ -543,6 +543,15 @@
                 padding: 10px;
                 max-height: 180px;
             }
+
+            .app-footer {
+                flex-direction: column !important;
+                gap: 8px !important;
+                padding: 16px 14px 20px 14px !important;
+            }
+            .footer-separator {
+                display: none !important;
+            }
         }
 
         /* 3. Compact Mobile View (<= 580px) */
@@ -1500,6 +1509,11 @@
             padding: 16px 24px;
             font-size: 12px;
             color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
             text-align: center;
         }
 
@@ -1508,9 +1522,97 @@
             text-decoration: none;
         }
 
-        .app-footer a:hover {
-            color: var(--text-primary);
-            text-decoration: underline;
+        .powered-badge-dark {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 4px 12px 4px 8px;
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .powered-badge-dark:hover {
+            background: rgba(30, 41, 59, 0.95);
+            border-color: rgba(129, 140, 248, 0.7);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .powered-badge-dark::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.75s ease;
+        }
+
+        .powered-badge-dark:hover::before {
+            transform: translateX(100%);
+        }
+
+        .powered-badge-dark .powered-beacon {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 7px;
+            height: 7px;
+        }
+
+        .powered-badge-dark .powered-beacon-ping {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: #34d399;
+            opacity: 0.85;
+            animation: beaconPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        .powered-badge-dark .powered-beacon-dot {
+            position: relative;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #10b981;
+        }
+
+        @keyframes beaconPulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            70%, 100% { transform: scale(2.4); opacity: 0; }
+        }
+
+        .powered-badge-dark .brand-name {
+            font-weight: 700;
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.01em;
+        }
+
+        .powered-badge-dark .arrow-icon {
+            width: 10px;
+            height: 10px;
+            color: #818cf8;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+
+        .powered-badge-dark:hover .arrow-icon {
+            color: #38bdf8;
+            transform: translate(1px, -1px);
         }
 
         /* ================= HISTORY SECTION STYLES ================= */
@@ -2513,7 +2615,21 @@
         </main>
 
         <footer class="app-footer">
-            Clean-Meta Studio • Precision Media Forensics & Metadata Sanitizer • Crafted with precision by <a href="https://github.com/BDwicky" target="_blank" rel="noopener">Bagus Dwicy Primananda</a>
+            <span>Clean-Meta Studio • Precision Media Forensics & Metadata Sanitizer</span>
+            <span class="footer-separator" style="opacity: 0.3; margin: 0 2px;">•</span>
+            <a href="https://dwicky.dev" target="_blank" rel="noopener noreferrer" class="powered-badge-dark">
+                <span class="powered-beacon">
+                    <span class="powered-beacon-ping"></span>
+                    <span class="powered-beacon-dot"></span>
+                </span>
+                <span>Powered by</span>
+                <span class="brand-name">dwicky.dev</span>
+                <svg class="arrow-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+            </a>
         </footer>
     </div>
 
