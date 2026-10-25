@@ -262,7 +262,7 @@
         }
 
         /* ==========================================================================
-           RESPONSIVE SYSTEM — MOBILE OPTIMIZED (NATURAL & UNCONSTRAINED)
+           RESPONSIVE SYSTEM — MOBILE OPTIMIZED (BOTTOM FIXED NAVIGATION)
            ========================================================================== */
 
         .input-actions-row {
@@ -278,54 +278,140 @@
             }
         }
 
-        /* 2. Phablets & Mobile Header (<= 860px) */
-        @media (max-width: 860px) {
-            .header-inner {
-                display: grid;
-                grid-template-columns: 1fr auto;
-                grid-template-areas:
-                    "brand meta"
-                    "tabs tabs";
-                gap: 12px 8px;
-                padding: 12px 16px;
-            }
-            .brand-wrap {
-                grid-area: brand;
-            }
-            .header-meta {
-                grid-area: meta;
-                justify-content: flex-end;
-            }
-            .nav-tabs {
-                grid-area: tabs;
-                width: 100%;
-                overflow-x: auto;
-                flex-wrap: nowrap;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: none;
-                padding: 4px;
-                gap: 6px;
-                scroll-snap-type: x mandatory;
-            }
-            .nav-tabs::-webkit-scrollbar {
-                display: none;
-            }
-            .nav-tab {
-                flex: 0 0 auto;
-                scroll-snap-align: start;
-                padding: 8px 14px;
-                font-size: 13px;
-                border-radius: var(--radius-sm);
-            }
-        }
-
-        /* 3. Standard Mobile Screens (<= 768px) */
+        /* 2. Standard Mobile Devices (<= 768px): FIXED BOTTOM NAV & CLEAN TOP APP BAR */
         @media (max-width: 768px) {
-            .main-wrapper {
-                padding: 16px 12px 48px 12px;
+            /* Top Header: Clean app bar with Brand on Left and Admin Mode on Right */
+            .header-inner {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                padding: 12px 16px !important;
+                gap: 12px !important;
             }
 
-            /* Natural horizontal-scroll chip strip instead of forced truncated 2-column grid */
+            .brand-wrap {
+                flex-shrink: 0;
+            }
+
+            .header-meta {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            /* FIXED BOTTOM NAVIGATION BAR */
+            .nav-tabs {
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100vw !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                z-index: 9999 !important;
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 0 !important;
+                background: rgba(14, 17, 24, 0.94) !important;
+                backdrop-filter: blur(20px) !important;
+                -webkit-backdrop-filter: blur(20px) !important;
+                border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+                border-left: none !important;
+                border-right: none !important;
+                border-bottom: none !important;
+                border-radius: 0 !important;
+                padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 12px)) 4px !important;
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6) !important;
+                box-sizing: border-box !important;
+            }
+
+            .nav-tab {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 6px 2px !important;
+                font-size: 11px !important;
+                font-weight: 600 !important;
+                color: #71717a !important;
+                background: transparent !important;
+                border: none !important;
+                border-radius: 8px !important;
+                gap: 3px !important;
+                position: relative !important;
+                transition: color 0.15s ease, transform 0.1s ease !important;
+                -webkit-tap-highlight-color: transparent !important;
+                box-shadow: none !important;
+                user-select: none !important;
+                cursor: pointer !important;
+            }
+
+            .nav-tab svg {
+                width: 20px !important;
+                height: 20px !important;
+                stroke-width: 2.1 !important;
+                transition: transform 0.15s ease, color 0.15s ease !important;
+                color: inherit !important;
+            }
+
+            .nav-tab .tab-label {
+                font-size: 10.5px !important;
+                letter-spacing: -0.01em !important;
+                line-height: 1.2 !important;
+            }
+
+            .nav-tab.active {
+                color: #818cf8 !important;
+            }
+
+            .nav-tab.active svg {
+                color: #818cf8 !important;
+                transform: translateY(-1px) !important;
+            }
+
+            /* Glowing top accent indicator on active tab */
+            .nav-tab.active::after {
+                content: '' !important;
+                position: absolute !important;
+                top: -6px !important;
+                width: 32px !important;
+                height: 3px !important;
+                background: #6366f1 !important;
+                border-radius: 0 0 3px 3px !important;
+                box-shadow: 0 1px 8px rgba(99, 102, 241, 0.8) !important;
+            }
+
+            .nav-tab:active {
+                transform: scale(0.93) !important;
+            }
+
+            /* Floating Counter Badge on Riwayat Tab */
+            #historyBadge {
+                position: absolute !important;
+                top: 2px !important;
+                right: calc(50% - 18px) !important;
+                font-size: 9px !important;
+                font-weight: 700 !important;
+                padding: 1px 5px !important;
+                margin-left: 0 !important;
+                line-height: 1.1 !important;
+                border-radius: 10px !important;
+                border: 1.5px solid #0e1118 !important;
+                background: #ef4444 !important;
+                color: #fff !important;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+            }
+
+            /* Body & Main Content Clearance so nothing is hidden behind fixed bottom bar */
+            body {
+                padding-bottom: calc(72px + env(safe-area-inset-bottom, 16px)) !important;
+            }
+
+            .main-wrapper {
+                padding: 16px 12px 28px 12px !important;
+            }
+
+            /* Horizontal-scroll chip strip */
             .spec-strip {
                 padding: 8px 12px;
                 overflow-x: auto;
@@ -393,7 +479,7 @@
                 font-size: 11.5px;
             }
 
-            /* Unconstrained media preview: vertical phone photos/videos look natural */
+            /* Natural media preview sizing */
             .preview-media-frame {
                 min-height: 180px;
                 max-height: 340px;
@@ -438,9 +524,8 @@
             }
         }
 
-        /* 4. Compact Mobile View (<= 580px) */
+        /* 3. Compact Mobile View (<= 580px) */
         @media (max-width: 580px) {
-            /* Input Group: Stack cleanly with side-by-side action buttons */
             .input-group {
                 flex-direction: column;
                 gap: 8px;
@@ -448,7 +533,7 @@
             .text-input {
                 width: 100%;
                 padding: 12px 14px;
-                font-size: 16px !important; /* Prevents auto-zoom in mobile Safari */
+                font-size: 16px !important;
                 box-sizing: border-box;
                 border-radius: var(--radius-md);
             }
@@ -489,7 +574,7 @@
                 line-height: 1.4 !important;
             }
 
-            /* Roomy 2-column quality grid with legible text (no cramped 3-column micro text) */
+            /* 2-column quality grid */
             .quality-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
                 gap: 8px !important;
@@ -524,11 +609,11 @@
             }
         }
 
-        /* 5. Extra Small Devices (<= 440px) */
+        /* 4. Extra Small Devices (<= 440px) */
         @media (max-width: 440px) {
             .header-inner {
-                padding: 10px 12px;
-                gap: 8px;
+                padding: 10px 12px !important;
+                gap: 8px !important;
             }
             .brand-title {
                 font-size: 15px;
@@ -538,14 +623,14 @@
                 padding: 1px 5px;
             }
             .header-meta .engine-pill {
-                display: none; /* Hide empty dot to leave room for Admin button */
+                display: none;
             }
             .btn-icon-soft {
                 padding: 6px 9px;
                 font-size: 11.5px;
             }
             .main-wrapper {
-                padding: 12px 10px 36px 10px;
+                padding: 12px 10px 24px 10px !important;
             }
             .panel {
                 padding: 16px 12px;
@@ -1846,25 +1931,25 @@
                     </div>
                 </div>
 
-                <div class="nav-tabs">
-                    <div class="nav-tab active" id="tabCleaner" onclick="showSection('cleaner')">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        Sanitasi Media
-                    </div>
-                    <div class="nav-tab" id="tabYouTube" onclick="showSection('youtube')">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
-                        YouTube
-                    </div>
-                    <div class="nav-tab" id="tabAudioExtract" onclick="showSection('audio')">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                        Ekstrak MP3
-                    </div>
-                    <div class="nav-tab" id="tabHistory" onclick="showSection('history')">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        Riwayat
+                <nav class="nav-tabs" aria-label="Navigasi Utama">
+                    <button type="button" class="nav-tab active" id="tabCleaner" onclick="showSection('cleaner')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span class="tab-label">Sanitasi</span>
+                    </button>
+                    <button type="button" class="nav-tab" id="tabYouTube" onclick="showSection('youtube')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+                        <span class="tab-label">YouTube</span>
+                    </button>
+                    <button type="button" class="nav-tab" id="tabAudioExtract" onclick="showSection('audio')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                        <span class="tab-label">Ekstrak MP3</span>
+                    </button>
+                    <button type="button" class="nav-tab" id="tabHistory" onclick="showSection('history')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span class="tab-label">Riwayat</span>
                         <span id="historyBadge" style="display: none; background: #6366f1; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; margin-left: 4px; line-height: 1.2;">0</span>
-                    </div>
-                </div>
+                    </button>
+                </nav>
 
                 <div class="header-meta">
                     <div class="engine-pill">
