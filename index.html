@@ -261,12 +261,24 @@
             align-items: start;
         }
 
+        /* ==========================================================================
+           RESPONSIVE SYSTEM — MOBILE OPTIMIZED (NATURAL & UNCONSTRAINED)
+           ========================================================================== */
+
+        .input-actions-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* 1. Tablets & Small Laptops (<= 980px) */
         @media (max-width: 980px) {
             .studio-grid {
                 grid-template-columns: 1fr;
+                gap: 20px;
             }
         }
 
+        /* 2. Phablets & Mobile Header (<= 860px) */
         @media (max-width: 860px) {
             .header-inner {
                 display: grid;
@@ -274,8 +286,8 @@
                 grid-template-areas:
                     "brand meta"
                     "tabs tabs";
-                gap: 10px 12px;
-                padding: 10px 14px;
+                gap: 12px 8px;
+                padding: 12px 16px;
             }
             .brand-wrap {
                 grid-area: brand;
@@ -291,172 +303,271 @@
                 flex-wrap: nowrap;
                 -webkit-overflow-scrolling: touch;
                 scrollbar-width: none;
+                padding: 4px;
+                gap: 6px;
+                scroll-snap-type: x mandatory;
             }
             .nav-tabs::-webkit-scrollbar {
                 display: none;
             }
             .nav-tab {
                 flex: 0 0 auto;
-                padding: 7px 13px;
+                scroll-snap-align: start;
+                padding: 8px 14px;
                 font-size: 13px;
+                border-radius: var(--radius-sm);
             }
         }
 
+        /* 3. Standard Mobile Screens (<= 768px) */
         @media (max-width: 768px) {
             .main-wrapper {
-                padding: 14px 10px 48px 10px;
+                padding: 16px 12px 48px 12px;
             }
+
+            /* Natural horizontal-scroll chip strip instead of forced truncated 2-column grid */
             .spec-strip {
                 padding: 8px 12px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                border-bottom: 1px solid var(--border-subtle);
+            }
+            .spec-strip::-webkit-scrollbar {
+                display: none;
             }
             .spec-inner {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 6px 10px;
-                font-size: 11.5px;
+                display: flex;
+                flex-wrap: nowrap;
+                gap: 8px;
+                width: max-content;
+                padding: 2px 2px;
             }
             .spec-item {
-                gap: 5px;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid var(--border-subtle);
+                padding: 5px 12px;
+                border-radius: 20px;
+                font-size: 12px;
                 white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                flex-shrink: 0;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                text-overflow: clip;
+                overflow: visible;
             }
+
+            /* Card Panels with natural spacing */
             .panel {
-                padding: 16px 13px;
-                border-radius: var(--radius-md);
+                padding: 18px 14px;
+                border-radius: var(--radius-lg);
             }
             .panel-header {
                 margin-bottom: 12px;
                 padding-bottom: 10px;
             }
             .panel-title {
-                font-size: 14.5px;
+                font-size: 15px;
             }
             .panel-subtitle {
-                font-size: 12px;
+                font-size: 12.5px;
+                line-height: 1.5;
                 margin-bottom: 14px;
             }
+
+            /* Touch-friendly dropzone */
             .dropzone {
-                padding: 22px 12px;
+                padding: 22px 14px;
+                border-radius: var(--radius-md);
             }
             .dropzone-icon {
-                width: 42px;
-                height: 42px;
-                margin-bottom: 8px;
+                width: 44px;
+                height: 44px;
+                margin-bottom: 10px;
             }
             .dropzone-text-primary {
-                font-size: 13.5px;
+                font-size: 14px;
             }
             .dropzone-text-sub {
-                font-size: 11px;
+                font-size: 11.5px;
             }
-            .preview-media-frame, .preview-media {
-                max-height: 220px;
+
+            /* Unconstrained media preview: vertical phone photos/videos look natural */
+            .preview-media-frame {
+                min-height: 180px;
+                max-height: 340px;
+            }
+            .preview-media {
+                max-height: 340px;
             }
             .preview-box {
-                padding: 10px;
-                margin-top: 12px;
+                padding: 12px;
+                margin-top: 14px;
+            }
+
+            /* Touch action buttons with comfortable tap area */
+            .btn-primary, .btn-success {
+                padding: 13px 16px;
+                font-size: 14px;
+                min-height: 48px;
+                border-radius: var(--radius-md);
+            }
+
+            /* Telemetry & EXIF table readability */
+            .telemetry-card {
+                padding: 14px 12px;
+                margin-bottom: 14px;
             }
             .exif-table th {
-                padding: 6px 8px;
-                font-size: 10px;
+                padding: 7px 10px;
+                font-size: 10.5px;
             }
             .exif-table td {
-                padding: 6px 8px;
-                font-size: 11px;
+                padding: 8px 10px;
+                font-size: 11.5px;
+                line-height: 1.4;
             }
             .exif-table td.key {
-                width: 44%;
+                width: 42%;
             }
             .forensic-log-box {
-                font-size: 11px;
+                font-size: 11.5px;
                 padding: 10px;
                 max-height: 180px;
             }
-            .btn-primary, .btn-success {
-                padding: 12px 14px;
-                font-size: 13.5px;
-            }
         }
 
+        /* 4. Compact Mobile View (<= 580px) */
         @media (max-width: 580px) {
+            /* Input Group: Stack cleanly with side-by-side action buttons */
             .input-group {
-                flex-wrap: wrap;
+                flex-direction: column;
                 gap: 8px;
             }
             .text-input {
                 width: 100%;
-                flex: 1 1 100%;
                 padding: 12px 14px;
-                font-size: 16px;
+                font-size: 16px !important; /* Prevents auto-zoom in mobile Safari */
                 box-sizing: border-box;
+                border-radius: var(--radius-md);
+            }
+            .input-actions-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                width: 100%;
             }
             .btn-paste {
-                flex: 1 1 0;
+                width: 100%;
+                min-height: 44px;
                 justify-content: center;
-                height: 42px;
-                font-size: 13px;
-                box-sizing: border-box;
+                font-size: 13.5px;
+                padding: 10px 12px;
+                border-radius: var(--radius-md);
             }
+
+            /* YouTube Banner Card for mobile */
             #ytInfoCard {
-                padding: 10px !important;
-                gap: 10px !important;
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
+                padding: 12px !important;
             }
             #ytInfoCard > div:first-child {
-                width: 96px !important;
-                height: 54px !important;
+                width: 100% !important;
+                height: 175px !important;
+                max-height: 48vw !important;
+                border-radius: var(--radius-sm) !important;
             }
             #ytInfoTitle {
-                font-size: 12.5px !important;
+                font-size: 14px !important;
                 white-space: normal !important;
                 display: -webkit-box !important;
                 -webkit-line-clamp: 2 !important;
                 -webkit-box-orient: vertical !important;
-                line-height: 1.35 !important;
+                line-height: 1.4 !important;
             }
+
+            /* Roomy 2-column quality grid with legible text (no cramped 3-column micro text) */
             .quality-grid {
-                grid-template-columns: repeat(3, 1fr) !important;
-                gap: 6px !important;
-                margin-bottom: 14px !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px !important;
+                margin-bottom: 16px !important;
             }
             .quality-card {
-                padding: 8px 4px !important;
-                border-radius: var(--radius-sm) !important;
+                padding: 11px 8px !important;
+                border-radius: var(--radius-md) !important;
+                min-height: 54px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
             }
             .quality-name {
-                font-size: 12.5px !important;
+                font-size: 13.5px !important;
+                font-weight: 700 !important;
             }
             .quality-sub {
-                font-size: 9.5px !important;
-                margin-top: 1px !important;
+                font-size: 11px !important;
+                color: var(--text-muted) !important;
+                margin-top: 2px !important;
+                line-height: 1.3 !important;
+            }
+
+            /* Camera preset dropdown touch styling */
+            .camera-preset-box {
+                padding: 12px !important;
+            }
+            #cameraPresetSelect {
+                font-size: 15.5px !important;
+                padding: 11px 10px !important;
             }
         }
 
-        @media (max-width: 480px) {
-            .header-meta .engine-pill span {
-                display: none;
-            }
-            .header-meta .engine-pill {
-                padding: 6px 8px;
+        /* 5. Extra Small Devices (<= 440px) */
+        @media (max-width: 440px) {
+            .header-inner {
+                padding: 10px 12px;
+                gap: 8px;
             }
             .brand-title {
                 font-size: 15px;
             }
-            .spec-inner {
-                font-size: 11px;
-                gap: 6px 8px;
+            .brand-badge {
+                font-size: 10px;
+                padding: 1px 5px;
+            }
+            .header-meta .engine-pill {
+                display: none; /* Hide empty dot to leave room for Admin button */
+            }
+            .btn-icon-soft {
+                padding: 6px 9px;
+                font-size: 11.5px;
             }
             .main-wrapper {
-                padding: 12px 8px 36px 8px;
+                padding: 12px 10px 36px 10px;
             }
             .panel {
-                padding: 14px 10px;
+                padding: 16px 12px;
             }
-        }
-
-        @media (max-width: 360px) {
+            .mode-opt {
+                padding: 8px 10px;
+                font-size: 13px;
+            }
             .quality-grid {
-                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 6px !important;
+            }
+            .quality-card {
+                padding: 9px 6px !important;
+            }
+            .quality-name {
+                font-size: 13px !important;
+            }
+            .quality-sub {
+                font-size: 10.5px !important;
+            }
+            .pin-modal-card {
+                padding: 26px 18px !important;
             }
         }
 
@@ -1683,7 +1794,7 @@
             <h3 class="pin-modal-title">Mode Admin Clean-Meta</h3>
             <p class="pin-modal-subtitle">Masukkan kode PIN Admin untuk membuka pemantauan riwayat semua klien & kontrol retensi berkas tidak hangus.</p>
             <form id="adminForm" onsubmit="handleAdminSubmit(event)">
-                <input type="password" id="adminPinInput" class="pin-input" maxlength="12" placeholder="PIN Admin" autocomplete="off">
+                <input type="password" id="adminPinInput" class="pin-input" maxlength="12" placeholder="PIN Admin" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
                 <button type="submit" class="btn-primary" style="padding: 12px; background: linear-gradient(135deg, #d97706, #b45309);">Masuk Mode Admin</button>
                 <div id="adminPinError" class="pin-error">PIN Admin salah, silakan coba kembali.</div>
             </form>
@@ -1872,7 +1983,7 @@
 
                         <!-- Target Camera Profile Preset Selector -->
                         <div class="camera-preset-box" style="margin-top: 14px; margin-bottom: 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 12px 14px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
                                 <label for="cameraPresetSelect" style="font-size: 12px; font-weight: 700; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; letter-spacing: 0.3px;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                                     PROFIL KAMERA SUNTIKAN (EXIF)
@@ -2044,14 +2155,16 @@
                     <!-- URL Input with Paste and Check Button -->
                     <div class="input-group">
                         <input type="text" id="ytUrl" class="text-input" placeholder="Masukkan URL YouTube (https://www.youtube.com/watch?v=...)" autocomplete="off">
-                        <button type="button" class="btn-paste" onclick="pasteYtUrl()" title="Tempel URL dari clipboard">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-                            Tempel
-                        </button>
-                        <button type="button" class="btn-paste" id="ytCheckBtn" onclick="inspectYoutubeUrl(true)" style="background: var(--accent-brand-tint); border-color: rgba(99, 102, 241, 0.3); color: #818cf8;" title="Periksa resolusi asli video">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            Cek Video
-                        </button>
+                        <div class="input-actions-row">
+                            <button type="button" class="btn-paste" onclick="pasteYtUrl()" title="Tempel URL dari clipboard">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                                Tempel
+                            </button>
+                            <button type="button" class="btn-paste" id="ytCheckBtn" onclick="inspectYoutubeUrl(true)" style="background: var(--accent-brand-tint); border-color: rgba(99, 102, 241, 0.3); color: #818cf8;" title="Periksa resolusi asli video">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                Cek Video
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Video Info Card (Preview Info Asli dari YouTube) -->
@@ -2192,7 +2305,7 @@
                             <span style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">KUALITAS BITRATE MP3</span>
                             <span style="font-size: 11.5px; color: var(--text-muted);">Pilih resolusi audio target</span>
                         </div>
-                        <div class="quality-grid" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="quality-grid">
                             <div class="quality-card active" data-abitrate="high" onclick="setAudioBitrate('high')">
                                 <div class="quality-name">Studio VBR</div>
                                 <div class="quality-sub">~245 kbps (Tertinggi)</div>
