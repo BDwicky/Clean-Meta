@@ -631,16 +631,37 @@
 
             /* Camera preset dropdown touch styling */
             .camera-preset-box {
-                padding: 12px !important;
+                padding: 10px 10px !important;
+                margin-top: 10px !important;
+                margin-bottom: 12px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
             }
-            #cameraPresetSelect {
-                font-size: 15.5px !important;
-                padding: 11px 10px !important;
+            .camera-preset-select {
+                font-size: 13px !important;
+                padding: 9px 30px 9px 10px !important;
+                height: 40px !important;
+            }
+            .camera-preset-select-arrow {
+                right: 10px !important;
+            }
+            .preset-spec-pill {
+                font-size: 10px !important;
+                padding: 1.5px 5px !important;
             }
         }
 
         /* 4. Extra Small Devices (<= 440px) */
         @media (max-width: 440px) {
+            .camera-preset-label {
+                font-size: 10px !important;
+                letter-spacing: 0.1px !important;
+            }
+            .preset-category-badge {
+                font-size: 9px !important;
+                padding: 1px 5px !important;
+            }
             .header-inner {
                 padding: 10px 12px !important;
                 gap: 8px !important;
@@ -941,6 +962,154 @@
             height: auto;
             object-fit: contain;
             display: block;
+        }
+
+        /* ================= CAMERA PRESET BOX ================= */
+        .camera-preset-box {
+            margin-top: 14px;
+            margin-bottom: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .camera-preset-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+            min-width: 0;
+            width: 100%;
+        }
+
+        .camera-preset-label {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: 0.3px;
+            min-width: 0;
+        }
+
+        .camera-preset-label svg {
+            flex-shrink: 0;
+            color: #818cf8;
+        }
+
+        .preset-category-badge {
+            font-size: 10px;
+            background: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+        }
+
+        .camera-preset-select-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        .camera-preset-select {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+            cursor: pointer;
+            padding: 10px 34px 10px 12px !important;
+            font-size: 13.5px !important;
+            background-color: var(--bg-surface) !important;
+            border: 1px solid var(--border-medium) !important;
+            border-radius: var(--radius-sm) !important;
+            color: var(--text-primary) !important;
+            font-weight: 600 !important;
+            font-family: inherit !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            line-height: 1.3 !important;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .camera-preset-select:focus {
+            border-color: var(--accent-brand-light) !important;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+            outline: none !important;
+        }
+
+        .camera-preset-select-arrow {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+        }
+
+        .preset-detail-box {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            min-width: 0;
+            width: 100%;
+            box-sizing: border-box;
+            overflow-wrap: anywhere;
+        }
+
+        .preset-detail-box svg {
+            flex-shrink: 0;
+            margin-top: 2.5px;
+            color: #818cf8;
+        }
+
+        .preset-detail-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 6px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .preset-spec-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 10.5px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .preset-spec-pill b {
+            color: var(--text-primary);
+            font-weight: 600;
         }
 
         /* ================= BUTTONS ================= */
@@ -2190,31 +2359,38 @@
                         </div>
 
                         <!-- Target Camera Profile Preset Selector -->
-                        <div class="camera-preset-box" style="margin-top: 14px; margin-bottom: 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 12px 14px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
-                                <label for="cameraPresetSelect" style="font-size: 12px; font-weight: 700; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; letter-spacing: 0.3px;">
+                        <div class="camera-preset-box">
+                            <div class="camera-preset-header">
+                                <label for="cameraPresetSelect" class="camera-preset-label">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                                    PROFIL KAMERA SUNTIKAN (EXIF)
+                                    <span>PROFIL KAMERA SUNTIKAN (EXIF)</span>
                                 </label>
-                                <span id="presetCategoryBadge" style="font-size: 10.5px; background: rgba(99, 102, 241, 0.15); color: #818cf8; font-weight: 700; padding: 2px 7px; border-radius: 4px;">iOS Flagship</span>
+                                <span id="presetCategoryBadge" class="preset-category-badge">iOS Flagship</span>
                             </div>
-                            <div style="position: relative;">
-                                <select id="cameraPresetSelect" class="text-input" onchange="onCameraPresetChange()" style="width: 100%; cursor: pointer; padding: 10px 12px; font-size: 13.5px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); color: var(--text-primary); font-weight: 600;">
-                                    <optgroup label="── Flagship Smartphones ──">
-                                        <option value="iphone_15_pro_max" selected>🍏 Apple iPhone 15 Pro Max (24mm f/1.78 • iOS 18.1.1)</option>
-                                        <option value="samsung_s24_ultra">📱 Samsung Galaxy S24 Ultra (200MP f/1.7 • One UI 6.1)</option>
-                                        <option value="google_pixel_8_pro">🤖 Google Pixel 8 Pro (50MP f/1.68 • Android 14)</option>
+                            <div class="camera-preset-select-wrap">
+                                <select id="cameraPresetSelect" class="camera-preset-select" onchange="onCameraPresetChange()">
+                                    <optgroup label="── Smartphone Flagship ──">
+                                        <option value="iphone_15_pro_max" selected>🍏 Apple iPhone 15 Pro Max</option>
+                                        <option value="samsung_s24_ultra">📱 Samsung Galaxy S24 Ultra</option>
+                                        <option value="google_pixel_8_pro">🤖 Google Pixel 8 Pro</option>
                                     </optgroup>
-                                    <optgroup label="── Kamera Profesional / Mirrorless ──">
-                                        <option value="sony_a7_iv">📷 Sony Alpha 7 IV / A7 IV (FE 24-70mm F2.8 GM II)</option>
-                                        <option value="canon_eos_r5">📸 Canon EOS R5 (RF 24-70mm F2.8 L IS USM)</option>
-                                        <option value="fujifilm_xt5">🎞️ Fujifilm X-T5 (XF 16-55mm F2.8 R LM WR)</option>
+                                    <optgroup label="── Kamera Mirrorless Pro ──">
+                                        <option value="sony_a7_iv">📷 Sony Alpha 7 IV (A7M4)</option>
+                                        <option value="canon_eos_r5">📸 Canon EOS R5</option>
+                                        <option value="fujifilm_xt5">🎞️ Fujifilm X-T5</option>
                                     </optgroup>
                                 </select>
+                                <div class="camera-preset-select-arrow">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
+                                </div>
                             </div>
-                            <div id="presetDetailText" style="font-size: 11.5px; color: var(--text-muted); margin-top: 6px; display: flex; align-items: center; gap: 5px;">
+                            <div id="presetDetailText" class="preset-detail-box">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span>Make: Apple • Model: iPhone 15 Pro Max • Lensa: Triple Camera 6.765mm f/1.78</span>
+                                <div class="preset-detail-chips">
+                                    <span class="preset-spec-pill"><span>Make:</span> <b>Apple</b></span>
+                                    <span class="preset-spec-pill"><span>Model:</span> <b>iPhone 15 Pro Max</b></span>
+                                    <span class="preset-spec-pill"><span>Lensa:</span> <b>Triple 6.765mm f/1.78</b></span>
+                                </div>
                             </div>
                         </div>
 
@@ -3298,26 +3474,44 @@
         const PRESET_DESCRIPTIONS = {
             iphone_15_pro_max: {
                 cat: 'iOS Flagship',
+                make: 'Apple',
+                model: 'iPhone 15 Pro Max',
+                lens: 'Triple 6.765mm f/1.78',
                 detail: 'Make: Apple • Model: iPhone 15 Pro Max • Lensa: Triple Camera 6.765mm f/1.78'
             },
             samsung_s24_ultra: {
                 cat: 'Android Flagship',
+                make: 'Samsung',
+                model: 'SM-S928B',
+                lens: '200MP Wide 6.3mm f/1.7',
                 detail: 'Make: Samsung • Model: SM-S928B • Lensa: 200MP Wide 6.3mm f/1.7'
             },
             google_pixel_8_pro: {
                 cat: 'Google HDR+',
+                make: 'Google',
+                model: 'Pixel 8 Pro',
+                lens: 'Octa PD 50MP 6.9mm f/1.68',
                 detail: 'Make: Google • Model: Pixel 8 Pro • Lensa: Octa PD 50MP 6.9mm f/1.68'
             },
             sony_a7_iv: {
                 cat: 'Full-Frame Mirrorless',
+                make: 'Sony',
+                model: 'ILCE-7M4',
+                lens: 'FE 24-70mm F2.8 GM II',
                 detail: 'Make: Sony • Model: ILCE-7M4 • Lensa: FE 24-70mm F2.8 GM II'
             },
             canon_eos_r5: {
                 cat: 'Cinema & Studio',
+                make: 'Canon',
+                model: 'Canon EOS R5',
+                lens: 'RF 24-70mm F2.8 L IS USM',
                 detail: 'Make: Canon • Model: Canon EOS R5 • Lensa: RF 24-70mm F2.8 L IS USM'
             },
             fujifilm_xt5: {
                 cat: 'Film Simulation',
+                make: 'FUJIFILM',
+                model: 'X-T5',
+                lens: 'XF 16-55mm F2.8 R LM WR',
                 detail: 'Make: FUJIFILM • Model: X-T5 • Lensa: XF 16-55mm F2.8 R LM WR'
             }
         };
@@ -3330,7 +3524,11 @@
             if (presetDetailText) {
                 presetDetailText.innerHTML = `
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                    <span>${info.detail}</span>
+                    <div class="preset-detail-chips">
+                        <span class="preset-spec-pill"><span>Make:</span> <b>${info.make || ''}</b></span>
+                        <span class="preset-spec-pill"><span>Model:</span> <b>${info.model || ''}</b></span>
+                        <span class="preset-spec-pill"><span>Lensa:</span> <b>${info.lens || ''}</b></span>
+                    </div>
                 `;
             }
         }
